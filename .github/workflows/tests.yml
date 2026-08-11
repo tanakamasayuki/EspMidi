@@ -1,0 +1,118 @@
+name: Tests
+
+# The three hardware-free test suites, run with the same commands as local
+# development (tests/README.ja.md) so CI and the dev loop cannot drift:
+#   unit/             - core logic, compiled and run for the host with g++
+#   arduino_smoke/    - the same headers built as an Arduino library
+#   examples_compile/ - every example built for its own sketch.yaml profile
+# The loopback/, peer/ and manual/ suites need real boards and stay out of CI.
+#
+# unit/ deliberately needs no Arduino toolchain: the core is portable C++ with no
+# Arduino dependency (docs/CORE_DESIGN.ja.md), so the suite that fixes the
+# specification finishes in seconds without downloading a platform.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Run unit tests
+        working-directory: tests
+        run: uv run pytest unit/
+
+  arduino_smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Arduino CLI
+        uses: arduino/setup-arduino-cli@v2
+
+      - name: Cache Arduino platform + tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.arduino15
+            ~/.cache/arduino
+          key: arduino-${{ runner.os }}-smoke-${{ hashFiles('tests/arduino_smoke/**/sketch.yaml') }}
+          restore-keys: |
+            arduino-${{ runner.os }}-smoke-
+
+      - name: Run the Arduino library build smoke test
+        working-directory: tests
+        run: uv run pytest arduino_smoke/
+
+  examples_compile:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Arduino CLI
+        uses: arduino/setup-arduino-cli@v2
+
+      - name: Cache Arduino platform + tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.arduino15
+            ~/.cache/arduino
+          # Keyed on the pinned platform / library lines so a version bump busts it.
+          key: arduino-${{ runner.os }}-examples-${{ hashFiles('examples/**/sketch.yaml') }}
+          restore-keys: |
+            arduino-${{ runner.os }}-examples-
+
+      - name: Update the Arduino library index
+        # sketch.yaml pins library versions (EspUsbHost / EspUsbDevice / EspBle)
+        # and they resolve against the library index. A cache restored through
+        # restore-keys can hold an index from before a pinned version was
+        # published, which fails as "Library '<name>' not found"; refreshing
+        # after the cache restore keeps that independent of cache state.
+        run: arduino-cli lib update-index
+
+      - name: Run example compile tests
+        working-directory: tests
+        run: uv run pytest examples_compile/

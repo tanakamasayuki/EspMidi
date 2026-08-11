@@ -1,0 +1,13 @@
+# EspMidi keyword highlighting for the Arduino IDE.
+# Columns are separated by a single tab.
+#
+# KEYWORD1 = class / type, KEYWORD2 = method / function, LITERAL1 = constant.
+# Entries are added as the API is implemented; see docs/DEVELOPMENT_PLAN.ja.md.
+
+EspMidi	KEYWORD1
+espmidi	KEYWORD1
+
+ESPMIDI_VERSION_MAJOR	LITERAL1
+ESPMIDI_VERSION_MINOR	LITERAL1
+ESPMIDI_VERSION_PATCH	LITERAL1
+ESPMIDI_VERSION_STR	LITERAL1

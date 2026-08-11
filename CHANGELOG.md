@@ -1,0 +1,8 @@
+# Changelog
+
+## Unreleased
+
+- リポジトリの骨格を作成した。docs / tests / CI / リリース資産を配置し、`tests/unit/test_repository_structure.py` が必須ファイルの存在を検査する状態にした。
+- `docs/REQUIREMENTS.ja.md` を要件定義として起こし、たたき台の `memo.ja.md` を削除した。
+- 基本方針を `docs/DECISIONS.ja.md` の決定 1〜5 として確定した(共通表現 / 依存方向 / ポートモデル / ルーティング / テスト環境)。
+- 基盤ライブラリへの変更依頼 2 件を提案した(`docs/LIBRARY_REQUESTS.ja.md`)。**両方の cable 数対応が実装された**ので、実装結果(API の形、提案の誤りの訂正、実装時に判明した注意点)を `docs/PORTS.ja.md` と `tests/TEST_PLAN.ja.md` へ反映した。cable 名は両側とも見送り。

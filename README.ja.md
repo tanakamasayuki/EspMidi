@@ -1,0 +1,84 @@
+# EspMidi
+
+[English](README.md)
+
+ESP32 の MIDI インターフェースの間にすわり、統合・複製・振り分けをするための Arduino 向けライブラリです。USB Host、USB Device、BLE、UART でつながった MIDI 入出力を共通のポートとして扱い、その間でメッセージを転送します。
+
+> **開発中です。** 基本方針と仕様が固まり、リポジトリの骨格とテスト環境が揃った段階(Phase 0 完了)です。**まだ動く機能はありません。** 実装の現在地は [docs/DEVELOPMENT_PLAN.ja.md](docs/DEVELOPMENT_PLAN.ja.md)、各ポートの状況は [docs/PORTS.ja.md](docs/PORTS.ja.md) を参照してください。
+
+## 何をするものか
+
+```text
+USB Host MIDI ─┐                              ┌─ USB Device MIDI(PC へ)
+USB Device MIDI ├─ 共通の MIDI ポート ─ ルーティング ─┼─ UART MIDI(外部音源へ)
+BLE MIDI ───────┤   統合・複製・振り分け          ├─ BLE MIDI
+UART MIDI ──────┘   フィルタ・基本変換            └─ ...
+```
+
+- **一対一** — USB Host の演奏を UART の音源へ
+- **一対多** — 1 つの入力を PC と外部音源へ同時に
+- **多対一** — 複数の入力を 1 つの音源へ統合
+- **多対多** — 入力元と出力先の組み合わせを個別に管理
+- **フィルタと変換** — チャンネル、ノート範囲、CC 番号での振り分け、トランスポーズ、Velocity や CC 値の変換
+
+## 何をしないものか
+
+**MIDI の通信方式そのものを実装しません。** USB や BLE のスタックを起動も停止もせず、所有もしません。それはスケッチと各基盤ライブラリの仕事です。
+
+そのおかげで **MIDI 以外の機能と共存できます**。USB Device で MIDI と HID を同時に公開する、BLE MIDI と独自 GATT サービスを併用する、USB Host で MIDI 機器とキーボードを同時に使う、といった構成を妨げません。
+
+シーケンサー、DAW 機能、ソフトウェアシンセサイザー、音声生成は対象外です。AppleMIDI / RTP-MIDI は初期スコープに含めません。詳細は [docs/REQUIREMENTS.ja.md](docs/REQUIREMENTS.ja.md) の非目標にあります。
+
+## このライブラリは任意です
+
+**MIDI 入力だけ、あるいは出力だけを片方向に使うなら、このライブラリは要りません。** `EspUsbHost` / `EspUsbDevice` / `EspBle` を直接使えば済みます。各ライブラリはそのための MIDI 便利 API と example を持ち続けます。
+
+`EspMidi` に価値が出るのは、**複数のインターフェースが出会う場所**です。
+
+## ポート
+
+ポートは header-only です。スケッチが include したポートの分だけ依存が発生します。`EspMidi.h` だけを include したスケッチは `EspUsbHost` も `EspBle` も要求しません。
+
+| ポート | ヘッダ | 依存 | 状況 |
+| --- | --- | --- | --- |
+| UART MIDI | `EspMidiUart.h` | なし | 予定 |
+| USB Device MIDI | `EspMidiEspUsbDevice.h` | [EspUsbDevice](https://github.com/tanakamasayuki/EspUsbDevice) | 予定 |
+| USB Host MIDI | `EspMidiEspUsbHost.h` | [EspUsbHost](https://github.com/tanakamasayuki/EspUsbHost) | 予定 |
+| BLE MIDI Device / Host | `EspMidiEspBle.h` | [EspBle](https://github.com/tanakamasayuki/EspBle) | 予定 |
+
+詳細と PC からの見え方は [docs/PORTS.ja.md](docs/PORTS.ja.md) にあります。
+
+## 対応環境
+
+- Arduino-ESP32(Arduino フレームワーク)
+- ESP32 シリーズ
+
+使えるインターフェースは SoC で決まります。USB Host / USB Device は USB OTG を持つ ESP32-S2 / ESP32-S3 / ESP32-P4 が対象です。BLE は BLE を持つ SoC が対象です。UART は全 ESP32 で使えます。
+
+## 設計のあらまし
+
+- **MIDI を解釈しません。** ルーティングに必要な最小限だけを見て、SysEx の中身は解釈せず運びます。
+- **時間を持ちません。** タイムスタンプは運びますが解釈しません。
+- **core は移植可能な純粋 C++** です。Arduino も ESP-IDF もハードウェアも要求しないので、仕様を固定するテストはホスト上で数秒で回ります。
+- **長い SysEx を前提にしています。** 音色ダンプをコピーなしで素通しできる形にしてあります。
+- **MIDI 2.0 へ地続きです。** 内部表現は MIDI 1.0 バイト列ですが、メッセージ種別の番号、チャンネル座標、タイムスタンプ、チャンクの扱いを UMP に合わせてあるので、対応時にルーティングやフィルタを作り直さずに済みます([docs/DECISIONS.ja.md](docs/DECISIONS.ja.md) の決定 1)。
+
+## ドキュメント
+
+[docs/README.ja.md](docs/README.ja.md) がどの文書をどの順に読むかの案内です。
+
+- [docs/REQUIREMENTS.ja.md](docs/REQUIREMENTS.ja.md) — 何のためのライブラリで、どこまでを対象にするか
+- [docs/DATA_MODEL.ja.md](docs/DATA_MODEL.ja.md) — MIDI メッセージとポートモデル
+- [docs/ROUTING.ja.md](docs/ROUTING.ja.md) — ルート、パイプライン、SysEx の規則、ループ防止
+- [docs/PORTS.ja.md](docs/PORTS.ja.md) — 各ポートの挙動と実装状況
+- [docs/DECISIONS.ja.md](docs/DECISIONS.ja.md) — なぜそう設計したのか、採らなかった案
+- [tests/README.ja.md](tests/README.ja.md) — テスト構成と実行方法
+
+## 関連ライブラリ
+
+- [ESP32KeyBridge](https://github.com/tanakamasayuki/ESP32KeyBridge) — 同じ統合思想でキーボード系入力を扱うライブラリ
+- [EspUsbHost](https://github.com/tanakamasayuki/EspUsbHost) / [EspUsbDevice](https://github.com/tanakamasayuki/EspUsbDevice) / [EspBle](https://github.com/tanakamasayuki/EspBle) — 基盤ライブラリ
+
+## ライセンス
+
+MIT License([LICENSE](LICENSE))

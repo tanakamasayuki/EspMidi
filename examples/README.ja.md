@@ -1,0 +1,29 @@
+# Examples
+
+[English](README.md)
+
+examples はすべて**実用例**です。実ハードウェア構成でそのまま書き込んで使うスケッチにします。
+
+中身は「1) スタック起動 → 2) ポートの生成 → 3) ルートとフィルタを組む」の 3 段構成に統一します。`EspMidi` はスタックを所有しないので、1 段目はスケッチの仕事です。
+
+## Examples
+
+まだありません。ポートが動くようになった Phase から追加します。追加予定の一覧は [../docs/DEVELOPMENT_PLAN.ja.md](../docs/DEVELOPMENT_PLAN.ja.md) にあります。
+
+## 置き方
+
+```text
+examples/<Name>/
+  <Name>.ino      スケッチ名とディレクトリ名を一致させる
+  README.ja.md
+  README.md
+  sketch.yaml     対象ボードの profile。default_profile を設定する
+```
+
+`tests/unit/test_repository_structure.py` がこの構成と、この README の一覧が実体と一致していることを自動確認します。
+
+`sketch.yaml` は default branch では `dir: ../../` で `EspMidi` を参照し、リリース時に共通 workflow がバージョン指定へ書き換えます([../docs/RELEASE_CHECKLIST.ja.md](../docs/RELEASE_CHECKLIST.ja.md))。
+
+## 自作のポートをつなぎたいとき
+
+ポートは header-only なので、`EspMidi` リポジトリの外にも書けます。インターフェースの正本は `src/EspMidi.h` のコメントで、同梱ポートのうち UART が最も小さいので実装例としては UART を読むのが早いです。設計の背景は [../docs/CORE_DESIGN.ja.md](../docs/CORE_DESIGN.ja.md) にあります。

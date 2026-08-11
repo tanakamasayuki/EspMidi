@@ -1,0 +1,108 @@
+# コア設計
+
+core / ポート / example の境界、依存の規則、時間と並行性の境界の仕様です。実装状況は [DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md) を参照してください。
+
+## 層の分け方
+
+```text
+example       スケッチ。スタックを起動し、ポートを作り、ルートを組む
+   │
+ポート層       transport 1 つにつき 1 ヘッダ。header-only
+   │          ワイヤ形式 ⇄ espmidi::Message の変換だけを行う
+   │
+core          共通表現・ポート管理・ルーティング・フィルタ・変換
+              純粋 C++。Arduino / ESP-IDF / ハードウェアに依存しない
+```
+
+## 依存の規則
+
+- **core は Arduino / ESP-IDF / ハードウェアに依存しない。** `Arduino.h` も `esp_*` も include しません。これによりホスト上で `g++` だけでテストできます([../tests/README.ja.md](../tests/README.ja.md))。
+- **ポートは header-only。** スケッチが include したポートの分だけ依存が発生します。`EspMidi.h` だけを include したスケッチは `EspUsbHost` も `EspBle` も要求しません。
+- **依存の向きは `EspMidi` → 基盤ライブラリの一方向だけ。** 基盤ライブラリが `EspMidi` に依存することはありません([DECISIONS.ja.md](DECISIONS.ja.md) の決定 2)。
+- **core からポートへの依存はない。** core はポートのインターフェースだけを知り、具体的な transport を知りません。
+
+## スタックの所有権
+
+**通信スタックはスケッチが所有します。** ポートはコンストラクタで参照を受けて購読するだけで、`begin()` を持ちません。
+
+```cpp
+// スケッチがスタックを起動する
+EspUsbHost usbHost;
+usbHost.begin();
+
+// ポートは参照を受けて購読するだけ
+espmidi::EspMidi midi;
+espmidi::EspUsbHostPort hostPort(midi, usbHost);
+```
+
+`EspMidi` は次を行いません。
+
+- USB Host / USB Device / BLE スタックの起動と停止
+- BLE Advertising の管理
+- 外部で生成されたオブジェクトの破棄
+- ポート選択、VID / PID などスタック側の設定の重複定義
+
+`EspMidi` 本体にも `begin()` はありません。ポートの生成、ルートの追加、スタックの起動に順序依存はありません。
+
+**この規則が共存性の土台です。** スタックがスケッチの所有物なので、同じスタック上で HID、CDC、Audio、独自 GATT サービスを併用でき、`EspMidi` 以外の処理が基盤ライブラリへ直接アクセスできます。
+
+## 時間と並行性の境界
+
+### 設計原則: core は時間を持たない
+
+core は clock を読みません。タイムスタンプは運びますが解釈しません([DATA_MODEL.ja.md](DATA_MODEL.ja.md))。デバウンス、サンプリング周期、レート制限といった時間依存処理はポートかヘルパー側に閉じます。
+
+### コールバックの実行コンテキスト
+
+受信は基盤ライブラリのコールバックで届き、その文脈は transport ごとに違います。
+
+| ポート | 受信の文脈 |
+| --- | --- |
+| USB Host | `EspUsbHost` のタスク |
+| USB Device | スケッチが `readPacket()` を呼んだ文脈(ポーリング) |
+| BLE | NimBLE ホストタスク |
+| UART | スケッチが読んだ文脈(ポーリング) |
+
+**そこから別の transport へ直接送信しません。** ポートはメッセージを core のキューへ渡すところまでを担い、ルーティングと送信は `loop()` からの明示 `update()` で行います([ROUTING.ja.md](ROUTING.ja.md))。
+
+```cpp
+void loop() {
+  usbHost.task();   // スタックの駆動はスケッチの責任
+  midi.update();    // ルーティングとフィルタと送信はここで走る
+}
+```
+
+`update()` を周期駆動する FreeRTOS タスクのラッパーは core に入れません。設定変更との排他が必要になるためで、`loop()` が長時間ブロックする構成の実需要が出た時点で opt-in の部品として検討します。
+
+### スレッド越えの受け渡し
+
+ポートが core へメッセージを渡す経路はスレッドセーフである必要があります。キューへのコピーはこの境界で行われます([ROUTING.ja.md](ROUTING.ja.md) の駆動モデル)。
+
+`raw` / `chunkData` のポインタはコールバック実行中だけ有効という規約は、この受け渡しを可能にするためのものです。ポートはワイヤのバッファをそのまま渡し、core がコピーの責任を持ちます。
+
+## ポートの責務
+
+ポートが行うこと。
+
+- ワイヤ形式 ⇄ `espmidi::Message` の変換
+- エンドポイントとポートの供給(動的な transport では接続・切断に応じた増減)
+- ポートのメタデータ(名前・識別子・状態)の提供
+- 送信の実行と、送信可否・失敗の報告
+
+ポートが行わないこと。
+
+- ルーティング、フィルタ、変換(core の責務)
+- スタックの起動・停止
+- 他のポートの存在を知ること
+
+## 自作ポートの書き方
+
+外部ライブラリが `EspMidi` の共通ポートとして参加できることを要件にしています([REQUIREMENTS.ja.md](REQUIREMENTS.ja.md) の拡張性)。ポートは header-only なので、`EspMidi` リポジトリ内に存在する必要はありません。
+
+インターフェースの正本は `src/EspMidi.h` のコメントです。同梱ポートのうち UART が最も小さいので、実装例としては UART を読むのが早いです。
+
+## ヘルパーの位置づけ
+
+Control Mapping ヘルパー(GPIO / ADC / エンコーダ → MIDI、MIDI → LED / 外部出力)は統合コアの必須部分ではありません。使わない構成では include しないだけで済むよう、core とは明確に分離します。
+
+GPIO の初期化、デバウンス、I/O エキスパンダの管理を `EspMidi` が必ず所有する設計にはしません。入力元を ESP32 の GPIO 番号だけに固定せず、ADC、タッチ、I/O エキスパンダ、キーマトリクス、外部入力ライブラリを同じ考え方で使える余地を残します。
