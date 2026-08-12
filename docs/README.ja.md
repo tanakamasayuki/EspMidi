@@ -2,7 +2,17 @@
 
 [English](README.md)
 
-どの文書を、どの順で読むかの案内です。設計文書は日本語のみ(`*.ja.md`)で、README・リリースチェックリスト・example は日英併記です。
+どの文書を、どの順で読むかの案内です。
+
+**日英併記の範囲は 3 段に分けています。**
+
+| 区分 | 言語 | 対象 |
+| --- | --- | --- |
+| 使う人が読むもの | **日英** | README、[GUIDE](GUIDE.ja.md)、[MIDI_BASICS](MIDI_BASICS.ja.md)、example、リリースチェックリスト |
+| **確定した仕様** | **日英** | [DATA_MODEL](DATA_MODEL.ja.md)、[ROUTING](ROUTING.ja.md)、[PORTS](PORTS.ja.md) |
+| 内部の記録・作業メモ | 日本語のみ | [REQUIREMENTS](REQUIREMENTS.ja.md)、[USE_CASES](USE_CASES.ja.md)、[CORE_DESIGN](CORE_DESIGN.ja.md)、[CONFIGURATION](CONFIGURATION.ja.md)、[DECISIONS](DECISIONS.ja.md)、[DEVELOPMENT_PLAN](DEVELOPMENT_PLAN.ja.md)、[LIBRARY_REQUESTS](LIBRARY_REQUESTS.ja.md)、テスト計画 |
+
+**正本は日本語版です。** 英語版は日本語版に追随させます。
 
 ## まずここから
 
@@ -54,3 +64,4 @@
 - `PORTS.ja.md` は「予定」「実装済み(実機検証待ち)」「実装済み(実機検証済み)」を区別する。リリース可否の判断で状況列をそのまま信用できるようにするため。
 - 設計を変えたら `DECISIONS.ja.md` に理由と、採らなかった案を残す。
 - **使う人向けの文書(`GUIDE` / `MIDI_BASICS`)には仕様を書かない。** 正本は設計文書側に置き、こちらからは参照する。同じことを 2 箇所に書くと必ず片方が古くなる。
+- **日英併記の文書は、日本語版を直したら英語版も直す。** 対応は `tests/unit/test_repository_structure.py` が固定している(`.ja.md` があって `.md` が無い、またはその逆を落とす)。**内部メモを英語にする必要はない。**

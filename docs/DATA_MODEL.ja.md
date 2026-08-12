@@ -1,5 +1,7 @@
 # データモデル
 
+[English](DATA_MODEL.md)
+
 `EspMidi` の中間表現とポートモデルの仕様です。この文書は**仕様**を書きます。実装がどこまで進んでいるかは [DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md) を参照してください。判断の理由と採らなかった案は [DECISIONS.ja.md](DECISIONS.ja.md) にあります。
 
 コード例では namespace(`espmidi::`)を省略しません。

@@ -82,10 +82,10 @@ espmidi::BleDevicePort port(router, bleMidi);
 
 ## Guides
 
-- **[docs/GUIDE.ja.md](docs/GUIDE.ja.md)** — the usage guide, starting from sending on a single port. Includes **troubleshooting** and how to read the diagnostic counters.
-- **[docs/MIDI_BASICS.ja.md](docs/MIDI_BASICS.ja.md)** — **the caveats of MIDI itself** (a note on with velocity 0, running status, 0-based channels, bandwidth) and **per-interface notes** (MIDI DIN isolation, cables, enumeration, BLE latency and limits).
+- **[docs/GUIDE.md](docs/GUIDE.md)** — the usage guide, starting from sending on a single port. Includes **troubleshooting** and how to read the diagnostic counters.
+- **[docs/MIDI_BASICS.md](docs/MIDI_BASICS.md)** — **the caveats of MIDI itself** (a note on with velocity 0, running status, 0-based channels, bandwidth) and **per-interface notes** (MIDI DIN isolation, cables, enumeration, BLE latency and limits).
 
-Both are Japanese only. If you are new to MIDI, the second one saves the most time.
+If you are new to MIDI, the second one saves the most time.
 
 ## Ports
 

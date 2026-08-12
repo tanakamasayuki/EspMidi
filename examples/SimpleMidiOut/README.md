@@ -23,6 +23,6 @@ router.update();                  // sent
 
 **`espmidi::AppPort` is "the sketch, as a port".** It is routed like any other port, so "also send it to a PC" is one more route rather than a rewrite.
 
-**Forget the note off and the note sustains forever.** The MIDI caveats worth knowing are collected in [../../docs/MIDI_BASICS.ja.md](../../docs/MIDI_BASICS.ja.md) (Japanese).
+**Forget the note off and the note sustains forever.** The MIDI caveats worth knowing are collected in [../../docs/MIDI_BASICS.md](../../docs/MIDI_BASICS.md).
 
-Next: [`../SimpleMidiIn/`](../SimpleMidiIn/), then [`../SameCodeAnyPort/`](../SameCodeAnyPort/). The guide is [../../docs/GUIDE.ja.md](../../docs/GUIDE.ja.md).
+Next: [`../SimpleMidiIn/`](../SimpleMidiIn/), then [`../SameCodeAnyPort/`](../SameCodeAnyPort/). The guide is [../../docs/GUIDE.md](../../docs/GUIDE.md).

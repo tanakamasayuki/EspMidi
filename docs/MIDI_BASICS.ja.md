@@ -1,5 +1,7 @@
 # MIDI の注意事項とインターフェース別の注意点
 
+[English](MIDI_BASICS.md)
+
 **MIDI で困ることの大半は、このライブラリではなく MIDI 自体の仕様です。** ここに集めてあります。使い方は [GUIDE.ja.md](GUIDE.ja.md) です。
 
 ## MIDI 自体

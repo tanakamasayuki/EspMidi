@@ -10,7 +10,7 @@ Connect a keyboard's MIDI OUT, play, and you can see exactly what it sends.
 
 The keyboard's MIDI OUT → **a MIDI IN circuit (an optocoupler)** → `RX_PIN` (GPIO20 by default).
 
-**Never wire a MIDI DIN socket straight to a GPIO.** MIDI is a 5V current loop and the input has to be isolated, or the 3.3V GPIO is destroyed. See [../../docs/MIDI_BASICS.ja.md](../../docs/MIDI_BASICS.ja.md) (Japanese).
+**Never wire a MIDI DIN socket straight to a GPIO.** MIDI is a 5V current loop and the input has to be isolated, or the 3.3V GPIO is destroyed. See [../../docs/MIDI_BASICS.md](../../docs/MIDI_BASICS.md).
 
 ## What to look at
 
@@ -22,4 +22,4 @@ The keyboard's MIDI OUT → **a MIDI IN circuit (an optocoupler)** → `RX_PIN` 
 
 **Pointers inside `message` are valid for the duration of the callback only.** Copy what you need to keep.
 
-Next: [`../SameCodeAnyPort/`](../SameCodeAnyPort/). The guide is [../../docs/GUIDE.ja.md](../../docs/GUIDE.ja.md).
+Next: [`../SameCodeAnyPort/`](../SameCodeAnyPort/). The guide is [../../docs/GUIDE.md](../../docs/GUIDE.md).

@@ -1,5 +1,7 @@
 # ルーティング
 
+[English](ROUTING.md)
+
 ポート間の転送、パイプライン、駆動モデル、SysEx の規則、ループ防止の仕様です。この文書は**仕様**を書きます。実装状況は [DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md) を、判断の理由は [DECISIONS.ja.md](DECISIONS.ja.md) を参照してください。
 
 前提となるメッセージとポートの形は [DATA_MODEL.ja.md](DATA_MODEL.ja.md) にあります。

@@ -8,7 +8,7 @@ They all follow the same three steps: 1) start the stacks, 2) create the ports, 
 
 ## Examples
 
-**If you are new, read the first three in order.** The guide is [../docs/GUIDE.ja.md](../docs/GUIDE.ja.md) and the MIDI caveats worth knowing are in [../docs/MIDI_BASICS.ja.md](../docs/MIDI_BASICS.ja.md) (Japanese).
+**If you are new, read the first three in order.** The guide is [../docs/GUIDE.md](../docs/GUIDE.md) and the MIDI caveats worth knowing are in [../docs/MIDI_BASICS.md](../docs/MIDI_BASICS.md).
 
 ### Start here — one port
 

@@ -41,12 +41,17 @@ def test_required_project_files_exist():
         "docs/README.ja.md",
         "docs/README.md",
         "docs/GUIDE.ja.md",
+        "docs/GUIDE.md",
         "docs/MIDI_BASICS.ja.md",
+        "docs/MIDI_BASICS.md",
         "docs/REQUIREMENTS.ja.md",
         "docs/DATA_MODEL.ja.md",
+        "docs/DATA_MODEL.md",
         "docs/ROUTING.ja.md",
+        "docs/ROUTING.md",
         "docs/CORE_DESIGN.ja.md",
         "docs/PORTS.ja.md",
+        "docs/PORTS.md",
         "docs/USE_CASES.ja.md",
         "docs/DECISIONS.ja.md",
         "docs/CONFIGURATION.ja.md",
@@ -186,6 +191,71 @@ def test_examples_are_grouped_with_docs_and_compile_profiles():
         for required in ["README.ja.md", "README.md", "sketch.yaml"]:
             if not (example_dir / required).exists():
                 missing.append(str((example_dir / required).relative_to(ROOT)))
+
+    assert missing == []
+
+
+# Documents that exist in both languages: everything a user of the library reads,
+# plus the settled specification. Internal records and working notes stay Japanese
+# only, deliberately — see the conventions in docs/README.ja.md.
+BILINGUAL_DOCS = [
+    "GUIDE",
+    "MIDI_BASICS",
+    "DATA_MODEL",
+    "ROUTING",
+    "PORTS",
+    "README",
+    "RELEASE_CHECKLIST",
+]
+
+JAPANESE_ONLY_DOCS = [
+    "REQUIREMENTS",
+    "USE_CASES",
+    "CORE_DESIGN",
+    "CONFIGURATION",
+    "DECISIONS",
+    "DEVELOPMENT_PLAN",
+    "LIBRARY_REQUESTS",
+]
+
+
+def test_bilingual_docs_have_both_languages():
+    # A translation that goes missing is worse than none: a reader following a
+    # link lands nowhere. The pairing is checked in both directions.
+    missing = []
+    for name in BILINGUAL_DOCS:
+        for suffix in [".ja.md", ".md"]:
+            path = ROOT / "docs" / f"{name}{suffix}"
+            if not path.exists():
+                missing.append(path.name)
+
+    assert missing == []
+
+
+def test_japanese_only_docs_are_not_half_translated():
+    # These are internal records. An English half would rot silently, so if one
+    # appears it is either a mistake or a decision to promote the document — and
+    # promoting it means adding it to BILINGUAL_DOCS above.
+    unexpected = [
+        f"{name}.md" for name in JAPANESE_ONLY_DOCS if (ROOT / "docs" / f"{name}.md").exists()
+    ]
+
+    assert unexpected == []
+
+
+def test_bilingual_docs_are_cross_linked():
+    # Each half links to the other, so a reader can switch language from wherever
+    # they landed.
+    missing = []
+    for name in BILINGUAL_DOCS:
+        if name == "README":
+            continue  # the index pair links through the language table instead
+        japanese = (ROOT / "docs" / f"{name}.ja.md").read_text(encoding="utf-8")
+        english = (ROOT / "docs" / f"{name}.md").read_text(encoding="utf-8")
+        if f"{name}.md" not in japanese:
+            missing.append(f"{name}.ja.md does not link to the English version")
+        if f"{name}.ja.md" not in english:
+            missing.append(f"{name}.md does not link to the Japanese version")
 
     assert missing == []
 
