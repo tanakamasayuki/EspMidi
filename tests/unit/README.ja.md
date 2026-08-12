@@ -22,6 +22,9 @@ core は Arduino / ESP-IDF / ハードウェアに依存しない純粋 C++ で�
 | subject | 対象 | 状況 |
 | --- | --- | --- |
 | `version/` | 公開ヘッダがホスト単体でコンパイルでき、バージョンマクロが整合している | 実装済み |
+| `message/` | 共通表現。ステータス分類 / データ長表 / UMP 番号体系 / タイムスタンプの単位 / 短いメッセージの構築と直列化 | 実装済み |
+| `parser/` | MIDI 1.0 バイトストリーム。running status / real-time の割り込み / SysEx のチャンク化と打ち切り | 実装済み |
+| `usb_packet/` | USB MIDI イベントパケット。CIN 表 / cable → ポート / SysEx の組み立てと分解 / 往復 | 実装済み |
 | `port_model/` | Endpoint / Port / 席モデル / 状態 / メタデータ / ポート群 | 予定(Phase 2) |
 | `routing/` | ルート / 3 段パイプライン / 登録順 / キュー / 循環検査 | 予定(Phase 3) |
 | `sysex_rules/` | SysEx 3 規則(経路は開始時確定 / 切断時に閉じる / 出力排他) | 予定(Phase 3) |

@@ -31,12 +31,16 @@
 
 #include "espmidi_version.h"
 
-// The library is being built up in the order given by
-// docs/DEVELOPMENT_PLAN.ja.md. Nothing is declared here yet: this header
-// currently exists so the include path, the Arduino library layout and the host
-// build are all verified from the first commit (tests/unit/arduino_smoke/).
-namespace espmidi
-{
-}
+// The common representation every port and every routing rule is expressed in.
+#include "EspMidiMessage.h"
+
+// Wire-format codecs. They live in the core rather than in the ports because
+// the same code serves more than one transport and because keeping them here is
+// what lets every wire format be tested on the host (tests/unit/).
+#include "EspMidiParser.h"    // MIDI 1.0 byte stream (UART)
+#include "EspMidiUsbPacket.h" // USB MIDI 1.0 event packets (USB Host and Device)
+
+// Still to come, in the order given by docs/DEVELOPMENT_PLAN.ja.md: the port
+// registry, routing, and filtering and transformation.
 
 #endif // ESPMIDI_H

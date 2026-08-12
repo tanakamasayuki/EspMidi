@@ -44,7 +44,8 @@ MIDI 1.0 のバイトストリームを 31250 baud で送受信します。MIDI 
 - USB MIDI イベントパケット(4 バイト、上位ニブル = cable、下位ニブル = CIN)⇄ `espmidi::Message` の変換は core が持つ
 - SysEx は CIN 0x4〜0x7 で組み立てる
 - 受信は `readPacket()` のポーリング。`update()` 駆動と相性が良い
-- cable 数は `EspUsbDeviceMidi(device, cableCount)` で宣言する。`MAX_CABLES` は 16 で、`EspMidi` の 1 エンドポイント上限と一致する
+- cable 数は `EspUsbDeviceMidi(device, cableCount)` または `(device, inCableCount, outCableCount)` で宣言する。**方向ごとに本数を変えられる。** `MAX_CABLES` は 16 で、`EspMidi` の 1 エンドポイント上限と一致する
+- 方向の呼び方はホスト視点で `EspUsbHostMidiPortInfo` と統一されている(IN = device → host)
 
 **PC から見える構成。** MIDI インターフェース 1 個で、cable 数だけポートが並びます。MIDI 単独構成でも、HID / CDC / MSC を含む複合 USB Device の一部としても使えます。
 

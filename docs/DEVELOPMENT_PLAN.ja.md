@@ -4,7 +4,13 @@
 
 ## 現在地
 
-**Phase 0 完了。** リポジトリの骨格、docs、テスト環境、CI が揃った状態です。`src/EspMidi.h` はまだ何も宣言していません。
+**Phase 1 完了。** 共通表現とワイヤ形式のコーデックが揃い、すべてホスト上のテストで固定されています。
+
+- `src/EspMidiMessage.h` — `Message` / `PortId` / `Timestamp` / `MessageType`、ステータス分類とデータ長表、短いメッセージの構築と直列化
+- `src/EspMidiParser.h` — MIDI 1.0 バイトストリーム → `Message`(UART 用)
+- `src/EspMidiUsbPacket.h` — USB MIDI イベントパケット ⇄ `Message`(USB Host / Device 共用)
+
+まだポートもルーティングもありません。次は Phase 2(ポートモデル)です。
 
 ## 実装順
 
@@ -13,7 +19,7 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 | Phase | 内容 | テスト | 状況 |
 | --- | --- | --- | --- |
 | 0 | リポジトリ骨格、docs、テスト環境、CI | `unit/test_repository_structure.py`、`arduino_smoke/` | **完了** |
-| 1 | 共通表現。`Message` / `PortId` / `Timestamp` / `MessageType` と MIDI 1.0 バイトストリームのパーサ(running status、SysEx チャンク) | `unit/message`、`unit/parser` | 予定 |
+| 1 | 共通表現。`Message` / `PortId` / `Timestamp` / `MessageType` と MIDI 1.0 バイトストリームのパーサ(running status、SysEx チャンク)、USB パケットコーデック | `unit/message`、`unit/parser`、`unit/usb_packet` | **完了** |
 | 2 | ポートモデル。Endpoint / Port / 席 / 状態 / メタデータ / ポート群 | `unit/port_model` | 予定 |
 | 3 | ルーティングと駆動。Route / 3 段パイプライン / キュー / SysEx 3 規則 / 循環検査 | `unit/routing`、`unit/sysex_rules` | 予定 |
 | 4 | フィルタと変換 | `unit/filter`、`unit/transform` | 予定 |
@@ -27,13 +33,21 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 
 ## Phase ごとの残作業
 
-### Phase 1: 共通表現
+### Phase 1: 共通表現(完了)
 
-- `espmidi::Message` / `PortId` / `Timestamp` / `MessageType` の定義
-- MIDI 1.0 バイトストリーム → `Message` のパーサ。running status の解決、データ長の判定、SysEx 境界の検出とチャンク化
-- `Message` → MIDI 1.0 バイト列のシリアライザ
-- USB MIDI イベントパケット(4 バイト、cable + CIN)⇄ `Message` のコーデック。USB Device と USB Host の両ポートで共用する
-- ポインタ寿命規約(`raw` / `chunkData` はコールバック中のみ有効)を守れる形になっていることの確認
+- ✅ `espmidi::Message` / `PortId` / `Timestamp` / `MessageType` の定義
+- ✅ MIDI 1.0 バイトストリーム → `Message` のパーサ。running status の解決、データ長の判定、SysEx 境界の検出とチャンク化
+- ✅ `Message` → MIDI 1.0 バイト列のシリアライザ(`serializeShortMessage()`)
+- ✅ USB MIDI イベントパケット(4 バイト、cable + CIN)⇄ `Message` のコーデック。USB Device と USB Host の両ポートで共用する
+- ✅ ポインタ寿命規約(`raw` / `chunkData` はコールバック中のみ有効)。SysEx チャンクは入力バッファを直接指すので、音色ダンプがコピーなしで通る
+
+実装で確定した細部:
+
+- **SysEx チャンクは「入力バッファ内の連続した並び」単位**で切る。real-time バイトがダンプの途中に割り込むとチャンクが分かれるが、ストリームは終わらない(`chunkEnd` は立たない)。連続でなければコピーなしで渡せないため。
+- **0xF7 以外のステータスバイトも SysEx を終わらせる。** 打ち切られたダンプでも `chunkEnd` を立てるので、下流のポートが送信中のストリームを閉じられる(ROUTING の規則 2)。
+- **USB の CIN 0x5 は byte1 が 0xF7 かどうかで判別する。** 「SysEx が 1 バイトで終わる」と「単バイト System Common」の兼用 CIN で、SysEx を終わらせられるのは 0xF7 だけなので曖昧さはない。
+- **USB の SysEx 状態は cable ごとに持つ。** cable は独立したポートで、1 回のバルク転送に複数 cable のパケットが混ざるため。
+- **開始を見ていない SysEx 継続パケットは捨てる。** 途中でリセットした場合に「始まりのないチャンク」を作らないため。
 
 ### Phase 2: ポートモデル
 

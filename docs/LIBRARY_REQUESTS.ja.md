@@ -31,12 +31,16 @@
 
 ```cpp
 static constexpr uint8_t MAX_CABLES = 16;   // EspMidi の 1 エンドポイント上限と一致
-explicit EspUsbDeviceMidi(EspUsbDevice &device, uint8_t cableCount = 1);  // 1..16 にクランプ
-uint8_t  cableCount() const;
+explicit EspUsbDeviceMidi(EspUsbDevice &device, uint8_t cableCount = 1);   // 1..16 にクランプ
+EspUsbDeviceMidi(EspUsbDevice &device, uint8_t inCableCount, uint8_t outCableCount);
+uint8_t  inCableCount() const;   // device → host(この機器が送る側)
+uint8_t  outCableCount() const;  // host → device(受ける側)
 uint16_t descriptorLength() const;
-// helper は 0 起算の cable 引数を取る。cableCount() 以上は false を返す
+// helper は 0 起算の cable 引数を取る。範囲外は false を返す
 bool noteOn(uint8_t channel, uint8_t note, uint8_t velocity, uint8_t cable = 0);
 ```
+
+**方向ごとに cable 数を変えられます。** 方向の呼び方は USB のエンドポイント方向と `EspUsbHostMidiPortInfo` に揃えてホスト視点で統一されているので、`EspMidi` は両者を同じ意味で扱えます(MIDI クラス仕様が embedded jack を機器側視点で呼ぶ点だけが例外)。
 
 helper が `cableCount()` 以上の cable で **false を返す**のは重要な性質で、「Host が知らないポートに載るパケットを黙って出す」ことがありません。`EspMidi` は `readPacket()` / `writePacket()` の生パケットを使うので helper は通りませんが、cable 範囲外を拒否する方針は `EspMidi` 側でも揃えます。
 
