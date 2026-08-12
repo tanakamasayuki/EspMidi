@@ -87,6 +87,7 @@ espmidi::BleDevicePort port(router, bleMidi);
 | **[docs/GUIDE.ja.md](docs/GUIDE.ja.md)** | 1 ポートの送信から順に進む使い方ガイド。**「よくあるつまずき」**と診断カウンタの読み方もここ |
 | **[docs/MIDI_BASICS.ja.md](docs/MIDI_BASICS.ja.md)** | **MIDI 自体の注意事項**(velocity 0 のノートオン、running status、チャンネルの 0 始まり、帯域)と**インターフェース別の注意点**(DIN の絶縁、cable、列挙、BLE のレイテンシと上限) |
 | **[docs/RECIPES.ja.md](docs/RECIPES.ja.md)** | 「これをやりたい」から引く断片集。**コードは全部コンパイルされています** |
+| **[docs/HARDWARE.ja.md](docs/HARDWARE.ja.md)** | MIDI DIN の回路。**3.3V の抵抗値**は規格の CA-033 が正典 |
 | [docs/API.ja.md](docs/API.ja.md) | 公開 API の一覧 |
 | [docs/FOOTPRINT.ja.md](docs/FOOTPRINT.ja.md) | RAM と遅延の**実測値**。削り方 |
 | [docs/PORT_AUTHORING.ja.md](docs/PORT_AUTHORING.ja.md) | 自作ポートの契約 |

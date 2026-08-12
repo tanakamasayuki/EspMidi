@@ -7,8 +7,10 @@
 ## 用意するもの
 
 - `examples/UartMidiMonitor` を書き込んだ ESP32-S3
-- MIDI IN 回路(フォトカプラ 6N138 など + 220Ω + 1N4148)
-- MIDI OUT 回路(220Ω × 2)
+- MIDI IN 回路(フォトカプラ PC-900V / 6N138 + 220Ω + 1N914)
+- MIDI OUT 回路。**5V なら 220Ω × 2、3.3V なら 33Ω(0.5W)と 10Ω**
+
+回路の詳細と根拠は [`../../docs/HARDWARE.ja.md`](../../docs/HARDWARE.ja.md) にあります(規格 CA-033 からの要約)。**ESP32 は 3.3V なので抵抗値が違います。**
 - MIDI OUT を持つ機器(キーボードなど)と MIDI IN を持つ機器(音源など)
 - MIDI ケーブル 2 本
 

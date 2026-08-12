@@ -14,6 +14,7 @@ Which document to read, and in what order. The design documents are Japanese onl
 | **Look up a name and its arguments** | **[API.md](API.md)** |
 | How much RAM it costs, and what to cut | [FOOTPRINT.md](FOOTPRINT.md) |
 | **Hit something in MIDI itself, or a per-interface caveat** | **[MIDI_BASICS.md](MIDI_BASICS.md)** |
+| **Build a MIDI DIN circuit (the 3.3 V resistor values)** | **[HARDWARE.md](HARDWARE.md)** |
 | Work out why nothing is arriving | the troubleshooting section of [GUIDE.md](GUIDE.md) |
 | Find a sketch for your setup | [../examples/README.md](../examples/README.md) — every example is a complete, flashable sketch |
 | Choose the ports you need and learn their limits | [PORTS.md](PORTS.md) |
@@ -29,7 +30,7 @@ Which document to read, and in what order. The design documents are Japanese onl
 
 | Group | Languages | Documents |
 | --- | --- | --- |
-| For users | **both** | the READMEs, [GUIDE](GUIDE.md), [MIDI_BASICS](MIDI_BASICS.md), [RECIPES](RECIPES.md), [API](API.md), [FOOTPRINT](FOOTPRINT.md), [PORT_AUTHORING](PORT_AUTHORING.md), the examples, the release checklist |
+| For users | **both** | the READMEs, [GUIDE](GUIDE.md), [MIDI_BASICS](MIDI_BASICS.md), [HARDWARE](HARDWARE.md), [RECIPES](RECIPES.md), [API](API.md), [FOOTPRINT](FOOTPRINT.md), [PORT_AUTHORING](PORT_AUTHORING.md), the examples, the release checklist |
 | **The settled specification** | **both** | [DATA_MODEL](DATA_MODEL.md), [ROUTING](ROUTING.md), [PORTS](PORTS.md) |
 | Internal records and working notes | Japanese only | REQUIREMENTS, USE_CASES, CORE_DESIGN, CONFIGURATION, DECISIONS, DEVELOPMENT_PLAN, LIBRARY_REQUESTS, the test plan |
 
@@ -39,6 +40,7 @@ Which document to read, and in what order. The design documents are Japanese onl
 
 - [GUIDE.md](GUIDE.md) — the usage guide: from sending on a single port up to routing between several, with a troubleshooting section and how to read the diagnostic counters.
 - [MIDI_BASICS.md](MIDI_BASICS.md) — the caveats of MIDI itself (velocity 0, running status, 0-based channels, bandwidth) and per-interface notes (DIN isolation, cables, enumeration, BLE latency and limits).
+- [HARDWARE.md](HARDWARE.md) — the MIDI DIN circuit: **the 3.3 V resistor values**, isolation, cable and EMI provisions, summarised from the specification (CA-033) with links to the originals.
 - [RECIPES.md](RECIPES.md) — fragments indexed by what you want to do. **All of the code is compiled.**
 - [API.md](API.md) — the public API, for looking up a name and its meaning.
 - [FOOTPRINT.md](FOOTPRINT.md) — **measured** RAM and latency, and what can be cut.

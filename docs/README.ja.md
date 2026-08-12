@@ -8,7 +8,7 @@
 
 | 区分 | 言語 | 対象 |
 | --- | --- | --- |
-| 使う人が読むもの | **日英** | README、[GUIDE](GUIDE.ja.md)、[MIDI_BASICS](MIDI_BASICS.ja.md)、[RECIPES](RECIPES.ja.md)、[API](API.ja.md)、[FOOTPRINT](FOOTPRINT.ja.md)、[PORT_AUTHORING](PORT_AUTHORING.ja.md)、example、リリースチェックリスト |
+| 使う人が読むもの | **日英** | README、[GUIDE](GUIDE.ja.md)、[MIDI_BASICS](MIDI_BASICS.ja.md)、[HARDWARE](HARDWARE.ja.md)、[RECIPES](RECIPES.ja.md)、[API](API.ja.md)、[FOOTPRINT](FOOTPRINT.ja.md)、[PORT_AUTHORING](PORT_AUTHORING.ja.md)、example、リリースチェックリスト |
 | **確定した仕様** | **日英** | [DATA_MODEL](DATA_MODEL.ja.md)、[ROUTING](ROUTING.ja.md)、[PORTS](PORTS.ja.md) |
 | 内部の記録・作業メモ | 日本語のみ | [REQUIREMENTS](REQUIREMENTS.ja.md)、[USE_CASES](USE_CASES.ja.md)、[CORE_DESIGN](CORE_DESIGN.ja.md)、[CONFIGURATION](CONFIGURATION.ja.md)、[DECISIONS](DECISIONS.ja.md)、[DEVELOPMENT_PLAN](DEVELOPMENT_PLAN.ja.md)、[LIBRARY_REQUESTS](LIBRARY_REQUESTS.ja.md)、テスト計画 |
 
@@ -24,6 +24,7 @@
 | **名前と引数を引く** | **[API.ja.md](API.ja.md)** |
 | RAM をどれだけ使うか、削り方 | [FOOTPRINT.ja.md](FOOTPRINT.ja.md) |
 | **MIDI 自体でハマった。インターフェース別の注意点を知る** | **[MIDI_BASICS.ja.md](MIDI_BASICS.ja.md)** |
+| **MIDI DIN の回路を作る(3.3V の抵抗値)** | **[HARDWARE.ja.md](HARDWARE.ja.md)** |
 | 動かない原因を切り分ける | [GUIDE.ja.md](GUIDE.ja.md) の「よくあるつまずき」 |
 | 自分の構成向けのスケッチを探す | [../examples/README.ja.md](../examples/README.ja.md) — すべてそのまま書き込める完結したスケッチ |
 | 使うポートを選び、できること・できないことを知る | [PORTS.ja.md](PORTS.ja.md) |
@@ -41,6 +42,7 @@
 
 - [GUIDE.ja.md](GUIDE.ja.md) — 使い方ガイド。1 ポートの送信から複数ポートのルーティングまで順に進みます。「よくあるつまずき」と診断カウンタの読み方もここ。
 - [MIDI_BASICS.ja.md](MIDI_BASICS.ja.md) — MIDI 自体の注意事項(velocity 0、running status、チャンネルの 0 始まり、帯域)とインターフェース別の注意点(DIN の絶縁、cable、列挙、BLE のレイテンシと上限)。
+- [HARDWARE.ja.md](HARDWARE.ja.md) — MIDI DIN の回路。**3.3V の抵抗値**、絶縁、ケーブル、EMI 対策。規格(CA-033)からの要約と原典へのリンク。
 - [RECIPES.ja.md](RECIPES.ja.md) — 「これをやりたい」から引く断片集。**コードは全部コンパイルされています**。
 - [API.ja.md](API.ja.md) — 公開 API の一覧。名前と意味だけを引く場所。
 - [FOOTPRINT.ja.md](FOOTPRINT.ja.md) — RAM と遅延の**実測値**。どこを削れるか。

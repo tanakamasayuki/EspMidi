@@ -48,6 +48,8 @@ def test_required_project_files_exist():
         "docs/FOOTPRINT.md",
         "docs/GUIDE.ja.md",
         "docs/GUIDE.md",
+        "docs/HARDWARE.ja.md",
+        "docs/HARDWARE.md",
         "docs/MIDI_BASICS.ja.md",
         "docs/PORT_AUTHORING.ja.md",
         "docs/PORT_AUTHORING.md",
@@ -211,6 +213,7 @@ def test_examples_are_grouped_with_docs_and_compile_profiles():
 BILINGUAL_DOCS = [
     "GUIDE",
     "MIDI_BASICS",
+    "HARDWARE",
     "RECIPES",
     "API",
     "FOOTPRINT",

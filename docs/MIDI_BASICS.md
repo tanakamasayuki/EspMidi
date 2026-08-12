@@ -2,7 +2,10 @@
 
 [日本語](MIDI_BASICS.ja.md)
 
-**Most of what goes wrong with MIDI is MIDI's own specification, not this library.** It is collected here. For how to use the library, see [GUIDE.md](GUIDE.md).
+**Most of what goes wrong with MIDI is MIDI's own specification, not this library.** It is collected here. For how to use the library see [GUIDE.md](GUIDE.md); for **the MIDI DIN circuit**, [HARDWARE.md](HARDWARE.md).
+
+**The specifications themselves.** The [MIDI 1.0 Detailed Specification](https://midi.org/midi-1-0-detailed-specification) (a free Japanese Ver 4.2 is published by [AMEI](https://amei.or.jp/midistandardcommittee/MIDIspcj.html)), and [CA-033 MIDI 1.0 Electrical Specification Update](https://www.midi.org/wp-content/uploads/wpforo/default_attachments/1709416667-ca33-MIDI-10-Electrical-Specification-Update.pdf) (2014), which replaces the Hardware section. **The 3.3 V circuit values exist only in CA-033** — the Japanese Ver 4.2 is 5 V only. The circuit is summarised in [HARDWARE.md](HARDWARE.md).
+
 
 ## MIDI itself
 
@@ -131,11 +134,14 @@ Not sending too many control changes when a knob moves matters in practice. That
 
 **The only interface that is electrically dangerous.**
 
-- MIDI is a **5V current loop**: the signal is a current, not a voltage.
-- **A MIDI IN must be isolated.** Use an optocoupler (6N138 or similar).
-- **Never wire a MIDI DIN socket straight to an ESP32 GPIO.** The 3.3V GPIO is destroyed.
-- A MIDI OUT is built from two 220Ω resistors.
-- The point of isolation is not sharing a ground with the other device. **Do not connect the shield (pin 2) at both ends.**
+- MIDI is a **5 mA current loop**: the signal is a current, not a voltage (logical 0 is current ON).
+- **A MIDI IN must be isolated.** Use an optocoupler (PC-900V, 6N138 or similar).
+- **Never wire a MIDI DIN socket straight to an ESP32 GPIO.** The 3.3 V GPIO is destroyed.
+- A MIDI OUT's series resistors are **two 220Ω at 5 V, or 33Ω and 10Ω at 3.3 V** (CA-033). **At 3.3 V the 33Ω has to be a 0.5 W part.**
+- Pin 2 is tied to ground **on the transmitter only**.
+- **One output drives one and only one input.** Fan out with a Thru.
+
+The values and the reasoning are in [HARDWARE.md](HARDWARE.md).
 
 If the wiring is right, the software can be ruled out with `loopback/uart_midi` — a test that passes with no wiring at all. **If that passes and this does not, the problem is the hardware.**
 

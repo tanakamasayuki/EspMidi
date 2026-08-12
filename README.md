@@ -87,6 +87,7 @@ espmidi::BleDevicePort port(router, bleMidi);
 | **[docs/GUIDE.md](docs/GUIDE.md)** | the usage guide, starting from sending on a single port. Includes **troubleshooting** and how to read the diagnostic counters |
 | **[docs/MIDI_BASICS.md](docs/MIDI_BASICS.md)** | **the caveats of MIDI itself** (a note on with velocity 0, running status, 0-based channels, bandwidth) and **per-interface notes** (DIN isolation, cables, enumeration, BLE latency and limits) |
 | **[docs/RECIPES.md](docs/RECIPES.md)** | fragments indexed by what you want to do. **All the code is compiled** |
+| **[docs/HARDWARE.md](docs/HARDWARE.md)** | the MIDI DIN circuit. **The 3.3 V resistor values** come from CA-033 |
 | [docs/API.md](docs/API.md) | the public API |
 | [docs/FOOTPRINT.md](docs/FOOTPRINT.md) | **measured** RAM and latency, and what to cut |
 | [docs/PORT_AUTHORING.md](docs/PORT_AUTHORING.md) | the contract for writing a port |

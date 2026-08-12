@@ -2,7 +2,10 @@
 
 [English](MIDI_BASICS.md)
 
-**MIDI で困ることの大半は、このライブラリではなく MIDI 自体の仕様です。** ここに集めてあります。使い方は [GUIDE.ja.md](GUIDE.ja.md) です。
+**MIDI で困ることの大半は、このライブラリではなく MIDI 自体の仕様です。** ここに集めてあります。使い方は [GUIDE.ja.md](GUIDE.ja.md)、**MIDI DIN の回路**は [HARDWARE.ja.md](HARDWARE.ja.md) です。
+
+**規格の原典。** [MIDI 1.0 Detailed Specification](https://midi.org/midi-1-0-detailed-specification)(日本語 Ver 4.2 は [AMEI](https://amei.or.jp/midistandardcommittee/MIDIspcj.html) が無料公開)と、Hardware 章を差し替える [CA-033 MIDI 1.0 Electrical Specification Update](https://www.midi.org/wp-content/uploads/wpforo/default_attachments/1709416667-ca33-MIDI-10-Electrical-Specification-Update.pdf)(2014)。**3.3V の回路値は CA-033 にしかありません**(日本語 Ver 4.2 は 5V 前提)。回路の要点は [HARDWARE.ja.md](HARDWARE.ja.md) にまとめてあります。
+
 
 ## MIDI 自体
 
@@ -131,11 +134,14 @@ System Exclusive(`0xF0` … `0xF7`)は機器固有のデータです。音色ダ
 
 **電気的に危険な唯一のインターフェースです。**
 
-- MIDI は **5V のカレントループ**です。電圧ではなく電流で信号を送ります
-- **MIDI IN は絶縁が必須**です。フォトカプラ(6N138 など)を使います
+- MIDI は **5 mA のカレントループ**です。電圧ではなく電流で信号を送ります(論理 0 = 電流 ON)
+- **MIDI IN は絶縁が必須**です。フォトカプラ(PC-900V、6N138 など)を使います
 - **MIDI DIN ソケットを ESP32 の GPIO に直結してはいけません。** 3.3V の GPIO が壊れます
-- MIDI OUT は 220Ω × 2 で作ります
-- GND を相手と直結しないのが絶縁の目的です。**シェル(pin 2)を両側で繋がない**
+- MIDI OUT の直列抵抗は **5V なら 220Ω × 2、3.3V なら 33Ω と 10Ω**(CA-033)。**3.3V では 33Ω 側が 0.5W 必要**です
+- ピン 2 を GND に落とすのは**送信側だけ**です
+- **1 つの出力が駆動してよい入力は 1 つだけ**。分配は Thru で行います
+
+値と根拠は [HARDWARE.ja.md](HARDWARE.ja.md) にまとめてあります。
 
 配線が正しければ、ソフト側は `loopback/uart_midi`(配線ゼロで通るテスト)で切り分けられます。**そちらが通ってこちらが通らないなら、原因はハードウェアです。**
 
