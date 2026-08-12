@@ -90,6 +90,8 @@ espmidi::ValueMap::range7(0, 127, 127, 0); // 反転(逆配線のペダル)
 
 受信は各基盤ライブラリのコールバックで届きます。そのコールバックは USB Host タスクや NimBLE ホストタスクの文脈で走るので、そこから別の transport へ直接送信しません。
 
+**`receive()` は複数のタスクから同時に呼べます。** キューはロックフリーの MPSC リングで、そこから先はすべて `update()` の中で単一スレッドで走ります([CORE_DESIGN.ja.md](CORE_DESIGN.ja.md))。
+
 ```text
 ポートのコールバック(transport のタスク文脈)
         ↓  メッセージをキューへコピー

@@ -14,7 +14,7 @@
 | --- | --- | --- | --- | --- |
 | UART MIDI | `EspMidiUart.h` | なし(`HardwareSerial`) | 全 ESP32 | **実装済み(実機検証済み)** |
 | USB Device MIDI | `EspMidiEspUsbDevice.h` | `EspUsbDevice` 2.0.2 以降 | S2 / S3 / P4 | **実装済み(実機検証済み)** |
-| USB Host MIDI | `EspMidiEspUsbHost.h` | `EspUsbHost` | S2 / S3 / P4 | 予定(Phase 7) |
+| USB Host MIDI | `EspMidiEspUsbHost.h` | `EspUsbHost` 2.7.5 以降 | S2 / S3 / P4 | **実装済み(実機検証済み)** |
 | BLE MIDI Device | `EspMidiEspBle.h` | `EspBle` | BLE を持つ SoC | 予定(Phase 8) |
 | BLE MIDI Host | `EspMidiEspBle.h` | `EspBle` | BLE を持つ SoC | 予定(Phase 8) |
 
@@ -105,6 +105,25 @@ port.begin("USB MIDI");                        // 出力 2 / 入力 3
 - 接続・切断は `addDeviceConnectedListener` / `addDeviceDisconnectedListener` で追う
 - 席の再照合に使う識別子は `EspUsbHostDeviceInfo` の VID / PID / serial
 - ポート数は `getMidiPortInfo(info, address)` の `inCableCount` / `outCableCount` で接続時に確定させる
+
+**cable 数の向きは反転しません。** `EspUsbHost` の数え方は既にホスト視点で、このライブラリがそのホストだからです。
+
+| `EspUsbHostMidiPortInfo` | 意味 | `EspMidi` |
+| --- | --- | --- |
+| `inCableCount` | device → host(受ける) | **入力ポート** |
+| `outCableCount` | host → device(送る) | **出力ポート** |
+
+**USB Device ポートとは逆**です(あちらは同じホスト視点の名前が機器を指すので反転する)。片方を直すときは両方を読んでください。
+
+**接続は callback ではなく `update()` からの polling で見つけます。** `getDevices()` を `ESPMIDI_USB_HOST_POLL_MS`(既定 100)ごとに引き、差分で席を作ります。列挙は polling 間隔よりずっと長くかかるので機器が遅れて見えることはありません。
+
+**理由は席に触るコードを 1 つのタスクに閉じ込めるためです。** `EspUsbHost` の MIDI コールバックはライブラリのタスクで走るので、そこでやるのは**生パケット 4 バイトをロックフリーのリングに写すこと**だけです。デコーダも cable の対応もレジストリも `update()` からしか触りません。
+
+- 機器が列挙された時点では MIDI インターフェースがまだ claim されていないことがある。`getMidiPortInfo()` が失敗したら**次の polling でもう一度見る**(諦めない)
+- 席は識別子で照合する。**アドレスはその回にスタックが配っただけの番号**なので照合には使わない
+- 切断すると席は `Disconnected` になり、そのまま残る。**その席への送信は失敗する**(次にそのアドレスを取った別の機器へ届かせないため)
+- 記憶域は固定長。`ESPMIDI_MAX_USB_HOST_DEVICES`(既定 4)/ `ESPMIDI_USB_HOST_MAX_CABLES`(既定 8)/ `ESPMIDI_USB_HOST_PACKETS`(既定 64)
+- 診断は `unknownCablePackets()` / `droppedPackets()` / `refusedDevices()`。**識別できない機器は接続ごとに新しい席を取る**ので、そういう機器を挿し替え続けると席が尽きる。`refusedDevices()` はそれが見えるようにするためにある
 
 **対象とする構成。** 動的な接続・切断、複数の MIDI 機器、USB ハブ経由の機器、MIDI 以外の USB 機器との共存、MIDI を含む複合機器、1 接続が複数の論理ポートを持つ場合。
 

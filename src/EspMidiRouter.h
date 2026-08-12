@@ -26,6 +26,8 @@
 #include "EspMidiMessage.h"
 #include "EspMidiPort.h"
 
+#include <atomic>
+
 #ifndef ESPMIDI_MAX_ROUTES
 #define ESPMIDI_MAX_ROUTES 16
 #endif
@@ -232,9 +234,15 @@ public:
   // A port adapter hands in a received message. Called from the transport's
   // context; the message is copied and nothing else happens until update().
   // Returns false when the queue is full, which is counted rather than blocking.
+  //
+  // **Safe to call from any task, and from several at once.** This is the one
+  // place in the library that has to be: a USB Host transfer callback and a BLE
+  // host task both arrive here without asking the sketch's permission
+  // (docs/CORE_DESIGN.ja.md). Everything past the queue runs in update(), on the
+  // sketch's task, single-threaded.
   bool receive(const Message &message)
   {
-    counters_.received++;
+    received_.fetch_add(1, std::memory_order_relaxed);
     if (!message.port.valid())
     {
       return false;
@@ -274,23 +282,55 @@ public:
   {
     closePendingStreams();
 
-    // Bounded by what was queued on entry: a stage that injects into an
-    // application port must not be able to keep this loop running forever.
-    size_t budget = count_;
-    while (budget > 0 && count_ > 0)
+    // Snapshotting the tail bounds the work to what was queued on entry, so a
+    // stage that injects into an application port cannot keep this loop running
+    // forever — and a transport that keeps receiving cannot either.
+    const uint32_t tail = tail_.load(std::memory_order_acquire);
+    uint32_t head = head_.load(std::memory_order_relaxed);
+
+    while (head != tail)
     {
-      const QueueEntry &entry = queue_[head_];
+      QueueEntry &entry = queue_[head % ESPMIDI_QUEUE_ENTRIES];
+      if (!entry.ready.load(std::memory_order_acquire))
+      {
+        // Reserved by a producer that has not finished writing it. Waiting is
+        // wrong here — this runs on the sketch's task — so the rest is left for
+        // the next update(), a few microseconds away.
+        break;
+      }
+
       dispatch(entry);
-      head_ = static_cast<uint16_t>((head_ + 1) % ESPMIDI_QUEUE_ENTRIES);
-      count_--;
-      budget--;
+
+      // The slot is released before the head moves, and the head is what a
+      // producer checks for space, so a slot can never be overwritten while it
+      // is being read.
+      entry.ready.store(false, std::memory_order_relaxed);
+      head++;
+      head_.store(head, std::memory_order_release);
     }
   }
 
-  const RouterCounters &counters() const { return counters_; }
-  void resetCounters() { counters_ = RouterCounters(); }
+  // A snapshot rather than a reference: two of the counters are written from the
+  // transport tasks, so they are read once here and handed over as plain values.
+  RouterCounters counters() const
+  {
+    RouterCounters snapshot = counters_;
+    snapshot.received = received_.load(std::memory_order_relaxed);
+    snapshot.queueFull = queueFull_.load(std::memory_order_relaxed);
+    return snapshot;
+  }
 
-  size_t queued() const { return count_; }
+  void resetCounters()
+  {
+    counters_ = RouterCounters();
+    received_.store(0, std::memory_order_relaxed);
+    queueFull_.store(0, std::memory_order_relaxed);
+  }
+
+  size_t queued() const
+  {
+    return tail_.load(std::memory_order_acquire) - head_.load(std::memory_order_relaxed);
+  }
 
   // True while an output port is in the middle of a stream. A port adapter can
   // use it to decide whether a link may be torn down cleanly.
@@ -344,6 +384,10 @@ private:
     bool chunkEnd = false;
     uint16_t chunkLength = 0;
     uint8_t chunkData[ESPMIDI_CHUNK_BYTES] = {};
+
+    // Set once the entry is fully written. A slot is reserved before it is
+    // filled, so the consumer needs to be told when the contents can be trusted.
+    std::atomic<bool> ready{false};
   };
 
   // A set of ports, for remembering where an open stream is going.
@@ -493,13 +537,25 @@ private:
 
   bool enqueue(const Message &message, const uint8_t *chunkData, size_t chunkLength, bool start, bool end)
   {
-    if (count_ >= ESPMIDI_QUEUE_ENTRIES)
+    // Reserve a slot. Several transport tasks can be here at once, so the
+    // reservation is a compare-and-swap rather than a write, and the index is
+    // free-running: the subtraction below is correct across the wrap.
+    uint32_t reserved = tail_.load(std::memory_order_relaxed);
+    for (;;)
     {
-      counters_.queueFull++;
-      return false;
+      const uint32_t head = head_.load(std::memory_order_acquire);
+      if (reserved - head >= ESPMIDI_QUEUE_ENTRIES)
+      {
+        queueFull_.fetch_add(1, std::memory_order_relaxed);
+        return false;
+      }
+      if (tail_.compare_exchange_weak(reserved, reserved + 1, std::memory_order_relaxed))
+      {
+        break;
+      }
     }
-    const uint16_t tail = static_cast<uint16_t>((head_ + count_) % ESPMIDI_QUEUE_ENTRIES);
-    QueueEntry &entry = queue_[tail];
+
+    QueueEntry &entry = queue_[reserved % ESPMIDI_QUEUE_ENTRIES];
     entry.port = message.port;
     entry.type = message.type;
     entry.timestamp = message.timestamp;
@@ -515,7 +571,9 @@ private:
     {
       entry.chunkData[i] = chunkData[i];
     }
-    count_++;
+
+    // Publishes everything written above.
+    entry.ready.store(true, std::memory_order_release);
     return true;
   }
 
@@ -788,8 +846,13 @@ private:
   QueueEntry queue_[ESPMIDI_QUEUE_ENTRIES];
   RouterCounters counters_;
   size_t routeSlots_ = 0;
-  uint16_t head_ = 0;
-  uint16_t count_ = 0;
+
+  // Free-running indices, not a head and a count: a count would have to be
+  // written by both sides of the queue.
+  std::atomic<uint32_t> head_{0};
+  std::atomic<uint32_t> tail_{0};
+  std::atomic<uint32_t> received_{0};
+  std::atomic<uint32_t> queueFull_{0};
 };
 
 // --- Application port -----------------------------------------------------

@@ -27,6 +27,9 @@ COMPILER_FLAGS = [
     "-Wall",
     "-Wextra",
     "-Werror",
+    # unit/concurrent_receive runs real threads against Router::receive(), which is
+    # the one entry point that has to be safe from a transport's task.
+    "-pthread",
 ]
 
 

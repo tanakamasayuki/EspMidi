@@ -4,7 +4,7 @@
 
 ## 現在地
 
-**Phase 6 完了。** core に加えて UART と USB Device のポートが動きます。**どちらも実機で検証済みです。**
+**Phase 7 完了。** core に加えて UART / USB Device / USB Host のポートが動きます。**すべて実機で検証済みです。**
 
 - `src/EspMidiMessage.h` — `Message` / `PortId` / `Timestamp` / `MessageType`、ステータス分類とデータ長表、短いメッセージの構築と直列化
 - `src/EspMidiParser.h` — MIDI 1.0 バイトストリーム ⇄ `Message`。`Parser` が受信、`Serializer` が送信
@@ -14,10 +14,11 @@
 - `src/EspMidiFilter.h` — `Filter` / `Transform` / `ValueMap`。宣言的な絞り込みと書き換え
 - `src/EspMidiUart.h` — `UartPort`。31250 baud の `HardwareSerial` に乗る最初のポート
 - `src/EspMidiEspUsbDevice.h` — `UsbDevicePort`。`EspUsbDevice` の cable 数だけポートを供給する
+- `src/EspMidiEspUsbHost.h` — `UsbHostPort`。接続された機器ごとに席を動的に供給する
 
-**core は完成しています。** ハードウェアに依存する部分は 1 行もなく、すべてホスト上のテストで固定されています。残るのは USB Host / BLE のポート(Phase 7・8)と Control Mapping ヘルパーです。
+**core は完成しています。** ハードウェアに依存する部分は 1 行もなく、すべてホスト上のテストで固定されています。残るのは BLE ポート(Phase 8)と Control Mapping ヘルパー(Phase 9)です。
 
-実機で確認したのは次のとおりです。`loopback/uart_midi`(1 台・**配線ゼロ**)、`peer/uart_midi`(2 台・既存配線をクロス)、`peer/usb_midi`(2 台・USB 直結、**cable 数を descriptor から読んで assert**)。
+実機で確認したのは次のとおりです。`loopback/uart_midi`(1 台・**配線ゼロ**)、`peer/uart_midi`(2 台・既存配線をクロス)、`peer/usb_midi`(素の `EspUsbHost` が観測役。**cable 数を descriptor から読んで assert**)、`peer/usb_midi_host`(両端が `EspMidi`。**動的な席の出現**)。
 
 兄弟ライブラリの依存は**公開バージョン**です(`EspUsbHost` 2.7.5 / `EspUsbDevice` 2.0.2)。依頼 1・2 の cable 対応はどちらもリリース済みなので、`*_local` プロファイルは開発版を試すときだけ使います。
 
@@ -34,7 +35,7 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 | 4 | フィルタと変換 | `unit/filter`、`unit/transform` | **完了** |
 | 5 | UART ポート | `unit/serializer`、`unit/uart_port`、`loopback/uart_midi`(配線ゼロ)、`peer/uart_midi` | **完了(実機検証済み)** |
 | 6 | USB Device ポート | `unit/usb_device_port`、`peer/usb_midi` | **完了(実機検証済み)** |
-| 7 | USB Host ポート | `peer/usb_midi` | 予定([依頼 2](LIBRARY_REQUESTS.ja.md) の cable 数は実装済み) |
+| 7 | USB Host ポート | `unit/usb_host_port`、`unit/concurrent_receive`、`peer/usb_midi_host` | **完了(実機検証済み)** |
 | 8 | BLE ポート(Device / Host) | `peer/ble_midi` | 予定 |
 | 9 | Control Mapping ヘルパー | `unit/control_mapping`、`manual/` | 予定 |
 
@@ -152,12 +153,27 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 - **宣言されていない cable のパケットは捨てて数える**(`unknownCablePackets()`)。捨てなければ別の席に載る。
 - **peer テストの descriptor は小さく保つ。** ESP-IDF の USB Host は列挙時の control transfer より長い configuration descriptor を拒否し、Arduino のプリコンパイル済みライブラリではその上限が 256 バイト。16 cable は正当な USB で PC 相手には動くが、この試験機では列挙できない。
 
-### Phase 7: USB Host ポート
+### Phase 7: USB Host ポート(完了・実機検証済み)
 
-- `EspMidiEspUsbHost.h`。MIDI リスナと `midiSend` に乗る
-- 動的なエンドポイントの供給。接続・切断への追従、識別子による席の照合
-- SysEx の連結(`EspUsbHost` が持たないので core のコーデックを使う)
-- `getMidiPortInfo()` でポート数を確定させる。方向の反転、1 機器 = 1 エンドポイントの制約、cable 数 0 の扱いに注意([LIBRARY_REQUESTS.ja.md](LIBRARY_REQUESTS.ja.md) の依頼 2)
+- ✅ `EspMidiEspUsbHost.h`。MIDI リスナと `midiSend` に乗る
+- ✅ 動的なエンドポイントの供給。接続・切断への追従、識別子による席の照合
+- ✅ SysEx の連結(`EspUsbHost` が持たないので core のコーデックを使う)
+- ✅ `getMidiPortInfo()` でポート数を確定させる
+- ✅ **キューを本当にスレッドセーフにした**(下記)
+- ✅ `peer/usb_midi_host`、`examples/UsbHostToUart`
+
+実装で確定した細部:
+
+- **`Router::receive()` を実際にスレッドセーフにした。** [CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) が最初から約束していたのに、キューは `head_` と `count_` を両側から書く形で成立していなかった。**USB Host はライブラリのタスクからコールバックが来る最初のポート**なので、ここで直した。ロックフリーの MPSC リング(CAS で席を取り、エントリごとの公開フラグで渡す)にし、`unit/concurrent_receive` が 4 スレッド × 2000 通で「受理したものは 1 度ずつ出てくる」「失ったものは数えられる」を固定している。**修正前のキューは同じテストで数百通を静かに失っていた。**
+- **`counters()` は参照ではなくスナップショットを返す。** `received` と `queueFull` はトランスポートのタスクから書かれるので、まとめて読んで値で渡す。
+- **席に触るコードは 1 つのタスクに閉じ込めた。** ライブラリのコールバックでやるのは**生パケット 4 バイトをロックフリーのリングに写すこと**だけ。デコーダも cable の対応もレジストリも `update()` からしか触らない。
+- **接続は callback ではなく polling で見つける**(`getDevices()` を 100 ms ごと)。同じ理由で、発見もレジストリを持つ側に置いた。列挙のほうがずっと遅いので機器が遅れて見えることはない。
+- **機器は列挙されてもすぐ MIDI とは分からない。** `getMidiPortInfo()` は claim 前だと失敗するので、失敗したら次の polling で見直す。諦めると「一瞬遅れた鍵盤」に席が付かない。
+- **cable 数の向きは反転しない。** `EspUsbHost` の数え方は既にホスト視点で、このライブラリがそのホストだから。**USB Device ポートとは逆**になる。
+- **席の照合はアドレスではなく識別子で行う。** アドレスはその回にスタックが配っただけの番号。
+- **切断した席への送信は失敗させる。** 次に同じアドレスを取った別の機器へ届いてしまうため。
+- **切断が SysEx の途中なら、規則 2 が下流のストリームを閉じる。** これは実装ではなく既存のルーティング規則がそのまま効く場面で、テストで固定した。
+- **リングは 2 段目のキューになる。** ポートのリング(既定 64)とルータのキュー(既定 32)の 2 つがあり、溢れはそれぞれ `droppedPackets()` と `queueFull` に出る。どちらで落ちたかで「読むのが遅い」と「流すのが遅い」を区別できる。
 
 ### Phase 8: BLE ポート
 
@@ -185,8 +201,8 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 | --- | --- |
 | ~~UART MIDI のモニタ~~ → `UartMidiMonitor` | 5 |
 | ~~USB Device MIDI(PC から見える最小構成)~~ → `UsbMidiDevice` | 5, 6 |
-| USB Host の演奏を UART の音源へ | 5, 7 |
-| USB Host の演奏を PC と外部音源へ同時に(UC1) | 5, 6, 7 |
+| ~~USB Host の演奏を UART の音源へ~~ → `UsbHostToUart` に含む | 5, 7 |
+| ~~USB Host の演奏を PC と外部音源へ同時に(UC1)~~ → `UsbHostToUart` | 5, 6, 7 |
 | 複数機器を集約して PC の複数ポートに(UC2) | 6, 7 |
 | BLE MIDI キーボードを UART 音源へ中継(UC5) | 5, 8 |
 | MIDI と HID の同居(UC6) | 6 |

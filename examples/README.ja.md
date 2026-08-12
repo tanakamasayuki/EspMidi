@@ -10,6 +10,7 @@ examples はすべて**実用例**です。実ハードウェア構成でその�
 
 - `UartMidiMonitor`: UART の MIDI をコンソールに表示しながら、もう 1 本の UART へそのまま流します。キーボードと音源の間に挟んでも演奏が止まりません。
 - `UsbMidiDevice`: PC に 2 ポートの USB MIDI インターフェースとして見えます。ポート 1 は MIDI DIN 対、ポート 2 はボード自身。
+- `UsbHostToUart`: USB MIDI キーボードで MIDI DIN の音源を鳴らしながら、同じ演奏を PC にも流します(UC1)。
 
 ポートが動くようになった Phase から順に増やします。追加予定の一覧は [../docs/DEVELOPMENT_PLAN.ja.md](../docs/DEVELOPMENT_PLAN.ja.md) にあります。
 

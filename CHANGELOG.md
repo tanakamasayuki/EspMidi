@@ -21,4 +21,10 @@
 - `peer/usb_midi` を追加し、実機で確認した。**cable 数そのものを `getMidiPortInfo()` で assert**してから往復を見る。DUT 側は素の `EspUsbHost` で、両端が同じコードでパケットを組んで誤りが打ち消し合うのを避けた。
 - `examples/UsbMidiDevice` を追加した。PC に 2 ポートの USB MIDI インターフェースとして見え、ポート 1 が MIDI DIN 対、ポート 2 がボード自身になる。
 - 兄弟ライブラリの依存を**公開バージョン**に固定した(`EspUsbHost` 2.7.5 / `EspUsbDevice` 2.0.2)。依頼 1・2 の cable 対応はどちらもリリース済みなので、`*_local` プロファイルは開発版を試すときだけ使う。
+- **USB Host MIDI ポートを実装した**(Phase 7)。`espmidi::UsbHostPort` が接続された機器ごとに席を動的に供給する。ポート数は `getMidiPortInfo()` で確定させ、SysEx の連結は core のコーデックが行い、席の照合はアドレスではなく識別子(VID / PID / シリアル)で行う。**cable 数の向きは反転しない**(`EspUsbHost` の数え方が既にホスト視点だから)ので、USB Device ポートとはちょうど逆になる。
+- **`Router::receive()` を実際にスレッドセーフにした。** `docs/CORE_DESIGN.ja.md` が最初から約束していたのに、キューは `head_` と `count_` を両側から書く形で成立していなかった。**USB Host はライブラリのタスクからコールバックが来る最初のポート**なので、ここで直した。ロックフリーの MPSC リング(CAS で席を取り、エントリごとの公開フラグで渡す)にし、スピンロックは使わない(高優先度のトランスポートタスクが `loop()` を待って回るのは単一コアだと危険なため)。`unit/concurrent_receive` が 4 スレッド × 2000 通で固定している。**修正前のキューは同じテストで数百通を静かに失っていた。**
+- `Router::counters()` が参照ではなくスナップショットを返すようになった。`received` と `queueFull` はトランスポートのタスクから書かれるため。
+- **席に触るコードを 1 つのタスクに閉じ込めた。** `EspUsbHost` のコールバックでやるのは生パケット 4 バイトをロックフリーのリングに写すことだけで、デコーダも cable の対応もレジストリも `update()` からしか触らない。接続の発見も callback ではなく `getDevices()` の polling にしたのは同じ理由。
+- `peer/usb_midi_host` を追加し、実機で確認した。両端が `EspMidi` で、機器をどこにも書かずに**挿したときに現れた席**を `InGroup::all()` のルートが拾う。素の `EspUsbHost` を観測役にした `peer/usb_midi` は、device 側が独立した相手に対して証明されている状態を保つために残した。
+- `examples/UsbHostToUart` を追加した(UC1)。USB MIDI キーボードで MIDI DIN の音源を鳴らしながら、同じ演奏を PC にも流す。
 - 基盤ライブラリへの変更依頼 2 件を提案した(`docs/LIBRARY_REQUESTS.ja.md`)。**両方の cable 数対応が実装された**ので、実装結果(API の形、提案の誤りの訂正、実装時に判明した注意点)を `docs/PORTS.ja.md` と `tests/TEST_PLAN.ja.md` へ反映した。cable 名は両側とも見送り。

@@ -63,8 +63,8 @@ BLE tests clear the bonds on both sides at the start and at the end, so a pairin
 
 - `uart_midi`: both directions of the UART port, reusing the existing wiring as a crossover (Phase 5). Notes, control changes and SysEx go each way. The round trip that fits on one board is in [`../loopback/uart_midi/`](../loopback/uart_midi/); what this adds is a **second clock**, each board resolving the bit timing of a signal it did not generate.
 - `usb_midi`: the USB Device port boundary (Phase 6). It **asserts the cable counts themselves through `getMidiPortInfo()`** before checking round trips across cables and SysEx. The DUT side is a plain `EspUsbHost`: if both ends built their packets with the same code, a wrong cable nibble would cancel out.
+- `usb_midi_host`: the USB Host port boundary (Phase 7). Both ends are EspMidi, and what this adds is **the dynamic side**: the DUT names no device, and the seats that appear when one is plugged in are picked up by a route from `InGroup::all()`. The port counts the two boards report are mirror images — the host view inverts for a device and not for a host.
 
 ## Planned
 
-- the USB Host port half of `usb_midi` (Phase 7), replacing the DUT with EspMidi's USB Host port.
 - `ble_midi`: the BLE MIDI Device and Host port boundaries, including timestamps and SysEx splitting (Phase 8).
