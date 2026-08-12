@@ -82,8 +82,14 @@ espmidi::BleDevicePort port(router, bleMidi);
 
 ## Guides
 
-- **[docs/GUIDE.md](docs/GUIDE.md)** — the usage guide, starting from sending on a single port. Includes **troubleshooting** and how to read the diagnostic counters.
-- **[docs/MIDI_BASICS.md](docs/MIDI_BASICS.md)** — **the caveats of MIDI itself** (a note on with velocity 0, running status, 0-based channels, bandwidth) and **per-interface notes** (MIDI DIN isolation, cables, enumeration, BLE latency and limits).
+| | |
+| --- | --- |
+| **[docs/GUIDE.md](docs/GUIDE.md)** | the usage guide, starting from sending on a single port. Includes **troubleshooting** and how to read the diagnostic counters |
+| **[docs/MIDI_BASICS.md](docs/MIDI_BASICS.md)** | **the caveats of MIDI itself** (a note on with velocity 0, running status, 0-based channels, bandwidth) and **per-interface notes** (DIN isolation, cables, enumeration, BLE latency and limits) |
+| **[docs/RECIPES.md](docs/RECIPES.md)** | fragments indexed by what you want to do. **All the code is compiled** |
+| [docs/API.md](docs/API.md) | the public API |
+| [docs/FOOTPRINT.md](docs/FOOTPRINT.md) | **measured** RAM and latency, and what to cut |
+| [docs/PORT_AUTHORING.md](docs/PORT_AUTHORING.md) | the contract for writing a port |
 
 If you are new to MIDI, the second one saves the most time.
 
@@ -98,7 +104,7 @@ Ports are header-only, so a sketch pulls in a dependency only for the ports it i
 | USB Host MIDI | `EspMidiEspUsbHost.h` | [EspUsbHost](https://github.com/tanakamasayuki/EspUsbHost) 2.7.5+ | **verified on hardware** |
 | BLE MIDI Device / Host | `EspMidiEspBle.h` | [EspBle](https://github.com/tanakamasayuki/EspBle) 1.2.0+ | **verified on hardware** |
 
-**A port can live outside this repository.** Ports are header-only and nothing about them is privileged; UART is the smallest bundled one and the quickest to read as an example.
+**A port can live outside this repository.** Ports are header-only and nothing about them is privileged; the contract is [docs/PORT_AUTHORING.md](docs/PORT_AUTHORING.md).
 
 ## It can be a MIDI controller too
 
@@ -166,6 +172,10 @@ The ports are in `unit/` as well: each is a template over the object it borrows,
 uv run --env-file .env pytest loopback/   # one board; UART needs no wiring at all
 uv run --env-file .env pytest peer/       # two boards
 ```
+
+## Contributing
+
+[CONTRIBUTING.md](CONTRIBUTING.md) covers running the tests, where a test belongs, and the code and documentation conventions.
 
 ## Related libraries
 

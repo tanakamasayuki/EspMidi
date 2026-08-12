@@ -19,6 +19,8 @@ def test_required_project_files_exist():
         "library.properties",
         "keywords.txt",
         "CHANGELOG.md",
+        "CONTRIBUTING.ja.md",
+        "CONTRIBUTING.md",
         "LICENSE",
         "src/EspMidi.h",
         "src/EspMidiEspUsbDevice.h",
@@ -40,9 +42,17 @@ def test_required_project_files_exist():
         "examples/README.md",
         "docs/README.ja.md",
         "docs/README.md",
+        "docs/API.ja.md",
+        "docs/API.md",
+        "docs/FOOTPRINT.ja.md",
+        "docs/FOOTPRINT.md",
         "docs/GUIDE.ja.md",
         "docs/GUIDE.md",
         "docs/MIDI_BASICS.ja.md",
+        "docs/PORT_AUTHORING.ja.md",
+        "docs/PORT_AUTHORING.md",
+        "docs/RECIPES.ja.md",
+        "docs/RECIPES.md",
         "docs/MIDI_BASICS.md",
         "docs/REQUIREMENTS.ja.md",
         "docs/DATA_MODEL.ja.md",
@@ -95,8 +105,8 @@ def test_required_project_files_exist():
         "tests/unit/ble_port/test_ble_port.py",
         "tests/unit/control_mapping/control_mapping_test.cpp",
         "tests/unit/control_mapping/test_control_mapping.py",
-        "tests/unit/guide_snippets/guide_snippets_test.cpp",
-        "tests/unit/guide_snippets/test_guide_snippets.py",
+        "tests/unit/docs_snippets/docs_snippets_test.cpp",
+        "tests/unit/docs_snippets/test_docs_snippets.py",
         "tests/arduino_smoke/arduino_smoke.ino",
         "tests/arduino_smoke/sketch.yaml",
         "tests/arduino_smoke/test_arduino_smoke.py",
@@ -201,6 +211,10 @@ def test_examples_are_grouped_with_docs_and_compile_profiles():
 BILINGUAL_DOCS = [
     "GUIDE",
     "MIDI_BASICS",
+    "RECIPES",
+    "API",
+    "FOOTPRINT",
+    "PORT_AUTHORING",
     "DATA_MODEL",
     "ROUTING",
     "PORTS",
@@ -258,6 +272,48 @@ def test_bilingual_docs_are_cross_linked():
             missing.append(f"{name}.md does not link to the Japanese version")
 
     assert missing == []
+
+
+def markdown_files():
+    skip = {".git", "build", ".venv", "output", "__pycache__", "node_modules"}
+    return [
+        path
+        for path in sorted(ROOT.rglob("*.md"))
+        if not any(part in skip for part in path.relative_to(ROOT).parts)
+    ]
+
+
+def strip_code_blocks(text):
+    # Fenced blocks are stripped before looking for links: a lambda capture like
+    # [this](const auto &m) looks exactly like a markdown link.
+    out = []
+    fenced = False
+    for line in text.splitlines():
+        if line.lstrip().startswith("```"):
+            fenced = not fenced
+            continue
+        if not fenced:
+            out.append(line)
+    return "\n".join(out)
+
+
+def test_every_internal_link_resolves():
+    # There are more than twenty documents cross-linking each other, so a moved or
+    # renamed file leaves a reader at a dead end. Nothing here checks the internet,
+    # only that the repository is internally consistent.
+    broken = []
+    for path in markdown_files():
+        text = strip_code_blocks(path.read_text(encoding="utf-8"))
+        for label, target in re.findall(r"\[([^\]]*)\]\(([^)]+)\)", text):
+            if target.startswith(("http://", "https://", "#", "mailto:")):
+                continue
+            relative = target.split("#")[0]
+            if not relative:
+                continue
+            if not (path.parent / relative).exists():
+                broken.append(f"{path.relative_to(ROOT)}: [{label}]({target})")
+
+    assert broken == []
 
 
 def test_docs_guide_references_every_design_document():

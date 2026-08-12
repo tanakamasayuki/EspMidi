@@ -47,4 +47,7 @@
 - **日英併記の範囲を 3 段で決めた。** 「使う人が読むもの」と**「確定した仕様」は日英併記**、「内部の記録・作業メモ」は日本語のみ。正本は日本語版。
 - 英語版を追加した: `docs/GUIDE.md`・`docs/MIDI_BASICS.md`(使う人向け)、`docs/DATA_MODEL.md`・`docs/ROUTING.md`・`docs/PORTS.md`(確定した仕様)。
 - **対応が崩れないようテストで固定した。** `.ja.md` があって `.md` が無い(またはその逆)と落ち、日本語のみと決めた文書に英語版が現れても落ちる。相互リンクの有無も見る。**内部メモを英語にする必要はない**ことを明示するための検査でもある。
+- **文書を大幅に足した。** `docs/RECIPES`(やりたいことから引く断片集)、`docs/API`(公開 API の一覧)、`docs/FOOTPRINT`(RAM と遅延の**実測値**)、`docs/PORT_AUTHORING`(自作ポートの契約)、`CONTRIBUTING`(開発の進め方)。**すべて日英併記。**
+- **`FOOTPRINT` の数字は ESP32-S3 での実測です。** `Router` 5888 バイト、`PortRegistry` 1072 バイトで、`ESPMIDI_MAX_PORTS` / `QUEUE_ENTRIES` / `MAX_ROUTES` を絞ると **1520 + 304 バイト = 約 1.8KB** まで落ちることを測った。example ごとの Flash / RAM も載せた。
+- **`RECIPES` のコードは全部コンパイルされます。** `unit/guide_snippets` を `unit/docs_snippets` に改名し、レシピと API 参照の断片も含めた。文書が黙って古くなりません。
 - 基盤ライブラリへの変更依頼 2 件を提案した(`docs/LIBRARY_REQUESTS.ja.md`)。**両方の cable 数対応が実装された**ので、実装結果(API の形、提案の誤りの訂正、実装時に判明した注意点)を `docs/PORTS.ja.md` と `tests/TEST_PLAN.ja.md` へ反映した。cable 名は両側とも見送り。

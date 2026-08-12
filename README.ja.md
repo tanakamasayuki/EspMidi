@@ -82,8 +82,14 @@ espmidi::BleDevicePort port(router, bleMidi);
 
 ## 使い方ガイド
 
-- **[docs/GUIDE.ja.md](docs/GUIDE.ja.md)** — 1 ポートの送信から順に進む使い方ガイド。**「よくあるつまずき」**と診断カウンタの読み方もここにあります
-- **[docs/MIDI_BASICS.ja.md](docs/MIDI_BASICS.ja.md)** — **MIDI 自体の注意事項**(velocity 0 のノートオン、running status、チャンネルの 0 始まり、帯域)と**インターフェース別の注意点**(MIDI DIN の絶縁、cable、列挙、BLE のレイテンシと上限)
+| | |
+| --- | --- |
+| **[docs/GUIDE.ja.md](docs/GUIDE.ja.md)** | 1 ポートの送信から順に進む使い方ガイド。**「よくあるつまずき」**と診断カウンタの読み方もここ |
+| **[docs/MIDI_BASICS.ja.md](docs/MIDI_BASICS.ja.md)** | **MIDI 自体の注意事項**(velocity 0 のノートオン、running status、チャンネルの 0 始まり、帯域)と**インターフェース別の注意点**(DIN の絶縁、cable、列挙、BLE のレイテンシと上限) |
+| **[docs/RECIPES.ja.md](docs/RECIPES.ja.md)** | 「これをやりたい」から引く断片集。**コードは全部コンパイルされています** |
+| [docs/API.ja.md](docs/API.ja.md) | 公開 API の一覧 |
+| [docs/FOOTPRINT.ja.md](docs/FOOTPRINT.ja.md) | RAM と遅延の**実測値**。削り方 |
+| [docs/PORT_AUTHORING.ja.md](docs/PORT_AUTHORING.ja.md) | 自作ポートの契約 |
 
 MIDI に不慣れな場合は 2 番目を先に読むと、ハマる回数が減ります。
 
@@ -100,7 +106,7 @@ MIDI に不慣れな場合は 2 番目を先に読むと、ハマる回数が減
 
 詳細と PC からの見え方は [docs/PORTS.ja.md](docs/PORTS.ja.md) にあります。
 
-**外部のポートも参加できます。** ポートは header-only で、追加対象がこのリポジトリ内にある必要はありません。同梱ポートのうち UART が最も小さいので、書くときはそれを読むのが早いです。
+**外部のポートも参加できます。** ポートは header-only で、追加対象がこのリポジトリ内にある必要はありません。契約は [docs/PORT_AUTHORING.ja.md](docs/PORT_AUTHORING.ja.md) にあります。
 
 ## MIDI コントローラにもなります
 
@@ -160,6 +166,7 @@ button.update(digitalRead(BUTTON_PIN) == LOW, millis());
 - [docs/DECISIONS.ja.md](docs/DECISIONS.ja.md) — なぜそう設計したのか、採らなかった案
 - [docs/CORE_DESIGN.ja.md](docs/CORE_DESIGN.ja.md) — core / ポート / example の境界と並行性
 - [tests/README.ja.md](tests/README.ja.md) — テスト構成と実行方法
+- [CONTRIBUTING.ja.md](CONTRIBUTING.ja.md) — 開発の進め方、コードと文書の約束
 
 ## テスト
 

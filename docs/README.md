@@ -10,13 +10,17 @@ Which document to read, and in what order. The design documents are Japanese onl
 | --- | --- |
 | Learn what the library does and see a working sketch | [../README.md](../README.md) |
 | **Start using it, one port at a time** | **[GUIDE.md](GUIDE.md)** → [../examples/SimpleMidiOut/](../examples/SimpleMidiOut/) |
+| **Look something up by what you want to do** | **[RECIPES.md](RECIPES.md)** |
+| **Look up a name and its arguments** | **[API.md](API.md)** |
+| How much RAM it costs, and what to cut | [FOOTPRINT.md](FOOTPRINT.md) |
 | **Hit something in MIDI itself, or a per-interface caveat** | **[MIDI_BASICS.md](MIDI_BASICS.md)** |
 | Work out why nothing is arriving | the troubleshooting section of [GUIDE.md](GUIDE.md) |
 | Find a sketch for your setup | [../examples/README.md](../examples/README.md) — every example is a complete, flashable sketch |
 | Choose the ports you need and learn their limits | [PORTS.md](PORTS.md) |
 | Understand why the MIDI message and port model look like this | [DATA_MODEL.md](DATA_MODEL.md) |
 | Learn the routing rules (including SysEx and loop prevention) | [ROUTING.md](ROUTING.md) |
-| Write your own port | the comments in `src/EspMidi.h` → `EspMidiUart.h` → [CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) |
+| **Write your own port** | **[PORT_AUTHORING.md](PORT_AUTHORING.md)** → `src/EspMidiUart.h` |
+| Contribute | [../CONTRIBUTING.md](../CONTRIBUTING.md) |
 | See the current position and remaining work | [DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md) and the status column in [PORTS.ja.md](PORTS.ja.md) |
 | Understand why it is designed this way | [DECISIONS.ja.md](DECISIONS.ja.md) |
 | See the outlook for MIDI 2.0 | decision 1 in [DECISIONS.ja.md](DECISIONS.ja.md) and the MIDI 2.0 section of [DATA_MODEL.md](DATA_MODEL.md) |
@@ -25,7 +29,7 @@ Which document to read, and in what order. The design documents are Japanese onl
 
 | Group | Languages | Documents |
 | --- | --- | --- |
-| For users | **both** | the READMEs, [GUIDE](GUIDE.md), [MIDI_BASICS](MIDI_BASICS.md), the examples, the release checklist |
+| For users | **both** | the READMEs, [GUIDE](GUIDE.md), [MIDI_BASICS](MIDI_BASICS.md), [RECIPES](RECIPES.md), [API](API.md), [FOOTPRINT](FOOTPRINT.md), [PORT_AUTHORING](PORT_AUTHORING.md), the examples, the release checklist |
 | **The settled specification** | **both** | [DATA_MODEL](DATA_MODEL.md), [ROUTING](ROUTING.md), [PORTS](PORTS.md) |
 | Internal records and working notes | Japanese only | REQUIREMENTS, USE_CASES, CORE_DESIGN, CONFIGURATION, DECISIONS, DEVELOPMENT_PLAN, LIBRARY_REQUESTS, the test plan |
 
@@ -35,6 +39,10 @@ Which document to read, and in what order. The design documents are Japanese onl
 
 - [GUIDE.md](GUIDE.md) — the usage guide: from sending on a single port up to routing between several, with a troubleshooting section and how to read the diagnostic counters.
 - [MIDI_BASICS.md](MIDI_BASICS.md) — the caveats of MIDI itself (velocity 0, running status, 0-based channels, bandwidth) and per-interface notes (DIN isolation, cables, enumeration, BLE latency and limits).
+- [RECIPES.md](RECIPES.md) — fragments indexed by what you want to do. **All of the code is compiled.**
+- [API.md](API.md) — the public API, for looking up a name and its meaning.
+- [FOOTPRINT.md](FOOTPRINT.md) — **measured** RAM and latency, and what can be cut.
+- [PORT_AUTHORING.md](PORT_AUTHORING.md) — the contract for writing a port. **A port can live outside this repository.**
 
 ## All documents
 

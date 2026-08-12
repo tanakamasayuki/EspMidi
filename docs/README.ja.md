@@ -8,7 +8,7 @@
 
 | 区分 | 言語 | 対象 |
 | --- | --- | --- |
-| 使う人が読むもの | **日英** | README、[GUIDE](GUIDE.ja.md)、[MIDI_BASICS](MIDI_BASICS.ja.md)、example、リリースチェックリスト |
+| 使う人が読むもの | **日英** | README、[GUIDE](GUIDE.ja.md)、[MIDI_BASICS](MIDI_BASICS.ja.md)、[RECIPES](RECIPES.ja.md)、[API](API.ja.md)、[FOOTPRINT](FOOTPRINT.ja.md)、[PORT_AUTHORING](PORT_AUTHORING.ja.md)、example、リリースチェックリスト |
 | **確定した仕様** | **日英** | [DATA_MODEL](DATA_MODEL.ja.md)、[ROUTING](ROUTING.ja.md)、[PORTS](PORTS.ja.md) |
 | 内部の記録・作業メモ | 日本語のみ | [REQUIREMENTS](REQUIREMENTS.ja.md)、[USE_CASES](USE_CASES.ja.md)、[CORE_DESIGN](CORE_DESIGN.ja.md)、[CONFIGURATION](CONFIGURATION.ja.md)、[DECISIONS](DECISIONS.ja.md)、[DEVELOPMENT_PLAN](DEVELOPMENT_PLAN.ja.md)、[LIBRARY_REQUESTS](LIBRARY_REQUESTS.ja.md)、テスト計画 |
 
@@ -20,13 +20,17 @@
 | --- | --- |
 | ライブラリが何をするものか知り、動くスケッチを見る | [../README.ja.md](../README.ja.md) |
 | **はじめて使う。1 ポートから順に覚える** | **[GUIDE.ja.md](GUIDE.ja.md)** → [../examples/SimpleMidiOut/](../examples/SimpleMidiOut/) |
+| **やりたいことから引く** | **[RECIPES.ja.md](RECIPES.ja.md)** |
+| **名前と引数を引く** | **[API.ja.md](API.ja.md)** |
+| RAM をどれだけ使うか、削り方 | [FOOTPRINT.ja.md](FOOTPRINT.ja.md) |
 | **MIDI 自体でハマった。インターフェース別の注意点を知る** | **[MIDI_BASICS.ja.md](MIDI_BASICS.ja.md)** |
 | 動かない原因を切り分ける | [GUIDE.ja.md](GUIDE.ja.md) の「よくあるつまずき」 |
 | 自分の構成向けのスケッチを探す | [../examples/README.ja.md](../examples/README.ja.md) — すべてそのまま書き込める完結したスケッチ |
 | 使うポートを選び、できること・できないことを知る | [PORTS.ja.md](PORTS.ja.md) |
 | MIDI メッセージとポートがなぜこの形なのかを知る | [DATA_MODEL.ja.md](DATA_MODEL.ja.md) |
 | ルーティングの規則を知る(SysEx やループ防止を含む) | [ROUTING.ja.md](ROUTING.ja.md) |
-| 自作ポートを書く | `src/EspMidi.h` のコメント → `EspMidiUart.h` → [CORE_DESIGN.ja.md](CORE_DESIGN.ja.md) |
+| **自作ポートを書く** | **[PORT_AUTHORING.ja.md](PORT_AUTHORING.ja.md)** → `src/EspMidiUart.h` |
+| 開発に参加する | [../CONTRIBUTING.ja.md](../CONTRIBUTING.ja.md) |
 | 現在地と残作業を知る | [DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md) と [PORTS.ja.md](PORTS.ja.md) の状況列 |
 | なぜそう設計したのかを知る | [DECISIONS.ja.md](DECISIONS.ja.md) |
 | MIDI 2.0 対応の見通しを知る | [DECISIONS.ja.md](DECISIONS.ja.md) の決定 1 と [DATA_MODEL.ja.md](DATA_MODEL.ja.md) の「MIDI 2.0 への地続き」 |
@@ -37,6 +41,10 @@
 
 - [GUIDE.ja.md](GUIDE.ja.md) — 使い方ガイド。1 ポートの送信から複数ポートのルーティングまで順に進みます。「よくあるつまずき」と診断カウンタの読み方もここ。
 - [MIDI_BASICS.ja.md](MIDI_BASICS.ja.md) — MIDI 自体の注意事項(velocity 0、running status、チャンネルの 0 始まり、帯域)とインターフェース別の注意点(DIN の絶縁、cable、列挙、BLE のレイテンシと上限)。
+- [RECIPES.ja.md](RECIPES.ja.md) — 「これをやりたい」から引く断片集。**コードは全部コンパイルされています**。
+- [API.ja.md](API.ja.md) — 公開 API の一覧。名前と意味だけを引く場所。
+- [FOOTPRINT.ja.md](FOOTPRINT.ja.md) — RAM と遅延の**実測値**。どこを削れるか。
+- [PORT_AUTHORING.ja.md](PORT_AUTHORING.ja.md) — 自作ポートの契約。**ポートはこのリポジトリの外にも書けます**。
 
 **設計(全体像を掴むならこの順)**
 

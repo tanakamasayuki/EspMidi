@@ -44,12 +44,12 @@ core は Arduino / ESP-IDF / ハードウェアに依存しない純粋 C++ で�
 | `usb_host_port/` | USB Host ポート。動的な席の出現 / 遅れて claim される機器 / 切断と再接続の照合 / 複数機器 / リングの上限 | 実装済み |
 | `ble_port/` | BLE ポート(Device / Host)。**タイムスタンプ** / **ダンプの再組み立てと上限** / 購読状態 / アドレスによる席の照合 | 実装済み |
 | `control_mapping/` | ボタンのデバウンスとラッチ / つまみのヒステリシスと反転 / エンコーダの 3 形式 / 受信からの出力制御 / MIDI Clock の生成と計測 | 実装済み |
-| `guide_snippets/` | **ガイドが名前を挙げている API を全部コンパイルする。** 挙動ではなく「文書がまだこのライブラリを説明している」ことの検査 | 実装済み |
+| `docs_snippets/` | **文書が名前を挙げている API を全部コンパイルする。** 挙動ではなく「文書がまだこのライブラリを説明している」ことの検査 | 実装済み |
 | `concurrent_receive/` | **`receive()` を複数スレッドから同時に呼ぶ。** 受理したものが 1 度ずつ出てくること、失ったものが数えられること | 実装済み |
 
 `test_repository_structure.py` はハードウェアも C++ も要らないリポジトリ構造の検査で、必須ファイルの存在と README の一覧一致を固定します。
 
-`guide_snippets/` も同じ趣旨です。**[../../docs/GUIDE.ja.md](../../docs/GUIDE.ja.md) と [../../docs/MIDI_BASICS.ja.md](../../docs/MIDI_BASICS.ja.md) が挙げている API を 1 度ずつ使う**だけのファイルで、名前を変えたら落ちます。文書が黙って古くなるのを防ぐためです。
+`docs_snippets/` も同じ趣旨です。**[../../docs/GUIDE.ja.md](../../docs/GUIDE.ja.md) / [../../docs/MIDI_BASICS.ja.md](../../docs/MIDI_BASICS.ja.md) / [../../docs/RECIPES.ja.md](../../docs/RECIPES.ja.md) / [../../docs/API.ja.md](../../docs/API.ja.md) が挙げている API を 1 度ずつ使う**だけのファイルで、名前を変えたら落ちます。文書が黙って古くなるのを防ぐためです。
 
 ## テストの書き方
 
