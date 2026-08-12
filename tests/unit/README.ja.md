@@ -17,7 +17,7 @@ core は Arduino / ESP-IDF / ハードウェアに依存しない純粋 C++ で�
 
 ## ポートもここに入る
 
-`uart_port/` だけは core ではなくポートのテストです。ポートがシリアルオブジェクトのテンプレート(`espmidi::BasicUartPort<T>`)になっているので、`HardwareSerial` の代わりに偽物を当てれば**ポートの挙動そのものをホスト上で固定できます**。
+`uart_port/` と `usb_device_port/` は core ではなくポートのテストです。ポートが借りるオブジェクトのテンプレート(`espmidi::BasicUartPort<T>` / `espmidi::BasicUsbDevicePort<M, D>`)になっているので、`HardwareSerial` や `EspUsbDeviceMidi` の代わりに偽物を当てれば**ポートの挙動そのものをホスト上で固定できます**。
 
 そこまでやると、実機のテストに残るのは**バイトが本当にパッドを渡ること**だけになります。逆に言えば、実機でしか確認できないことだけを [`../loopback/`](../loopback/) と [`../peer/`](../peer/) に残す、というのがポートを追加するときの方針です。
 
@@ -38,6 +38,7 @@ core は Arduino / ESP-IDF / ハードウェアに依存しない純粋 C++ で�
 | `filter/` | メッセージ種別の判定 / 種別・チャンネル・ノート範囲・CC 番号のフィルタ / 段への適用 | 実装済み |
 | `transform/` | ValueMap の正規化 / チャンネル / トランスポーズ / Velocity / CC / プレッシャー / 段の合成 | 実装済み |
 | `uart_port/` | UART ポート。席の供給 / 受信の router 到達 / 読み取りの上限 / 送信バッファ満杯 / 中断したダンプの終端 | 実装済み |
+| `usb_device_port/` | USB Device ポート。**cable 数の向きの反転** / cable 0 本 / 16 本への丸め / mount と unmount / 未宣言 cable の破棄 | 実装済み |
 
 `test_repository_structure.py` はハードウェアも C++ も要らないリポジトリ構造の検査で、必須ファイルの存在と README の一覧一致を固定します。
 

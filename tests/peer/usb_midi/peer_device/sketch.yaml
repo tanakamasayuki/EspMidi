@@ -1,0 +1,22 @@
+# Multi-cable MIDI shipped in EspUsbDevice 2.0.2. EspMidi itself is always the
+# checkout under test.
+profiles:
+  s3_peer_device:
+    fqbn: esp32:esp32:esp32s3:USBMode=default
+    platforms:
+      - platform: esp32:esp32 (3.3.11)
+        platform_index_url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+    libraries:
+      - dir: ../../../../
+      - EspUsbDevice (2.0.2)
+
+  s3_peer_local:
+    fqbn: esp32:esp32:esp32s3:USBMode=default
+    platforms:
+      - platform: esp32:esp32 (3.3.11)
+        platform_index_url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+    libraries:
+      - dir: ../../../../
+      - dir: ../../../../../EspUsbDevice
+
+default_profile: s3_peer_device

@@ -69,7 +69,7 @@ peer のクロスの内訳は次のとおりです。31250 baud なので USB �
 | 3 | ルーティング / 3 段パイプライン / キュー / SysEx 3 規則 / アプリケーションポート | 実装済み | | | | | |
 | 4 | フィルタ / 変換 | 実装済み | | | | | |
 | 5 | UART ポート | 実装済み | | 実装済み | **実機で確認**(配線ゼロ) | **実機で確認**(既存配線をクロス) | 実 MIDI DIN |
-| 6 | USB Device ポート(複数 cable) | | | 予定 | 予定(P4) | 予定 | Host OS / DAW 認識 |
+| 6 | USB Device ポート(複数 cable) | 実装済み | | 実装済み | 予定(P4) | **実機で確認** | Host OS / DAW 認識 |
 | 7 | USB Host ポート(動的接続 / 複数機器) | | | 予定 | 予定(P4) | 予定 | 実 MIDI 機器 |
 | 8 | BLE ポート(Device / Host) | | | 予定 | | 予定 | 実 BLE MIDI 機器 |
 | 9 | Control Mapping ヘルパー | 予定 | | 予定 | | | 実ボタン / エンコーダ |
@@ -91,7 +91,7 @@ BLE のテストは配線不要(無線リンク)ですが、使うボードは�
 1. **descriptor / ポート数そのものを検証する。** `EspMidi` の USB Device ポートが宣言した cable 数を、Host 役が `EspUsbHost::getMidiPortInfo()` の `inCableCount` / `outCableCount` で読んで assert します。**device が実際に cable を申告したことを実機で示せるのはこれだけです。**
 2. **そのうえで cable を跨いだ往復を確認する。** 1 を通さずに 2 だけ書くと、ポートが 1 本しかなくてもテストが通ってしまいます。
 
-`getMidiPortInfo()` は `EspUsbHost` で未リリースなので、**この peer テストのプロファイルは `*_local` のみ**にします。決定 5 で「全プロファイルに released 版と local 版を並べる」と決めたのがそのまま効く場面です(`EspUsbDevice` 側の `tests/peer/usb_midi_cables` も同じ理由で `s3_peer_local` のみになっています)。
+`getMidiPortInfo()` は **EspUsbHost 2.7.5** で、複数 cable の `EspUsbDeviceMidi` は **EspUsbDevice 2.0.2** でリリース済みです。したがって peer テストは公開バージョンに対して回します。決定 5 のとおり `*_local` プロファイルも並べてあり、兄弟ライブラリの開発版に対して確認したいときだけ `--profile=s3_peer_local` で選びます。
 
 なお `EspUsbHostMidiMessage::cable` はリリース済みなので、cable を跨いだ往復だけならリリース版でも確認できます。
 

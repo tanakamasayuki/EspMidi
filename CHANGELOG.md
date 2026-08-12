@@ -16,4 +16,9 @@
 - UART の実機テストを 2 つ追加し、**ESP32-S3 実機で確認した**。`loopback/uart_midi` は **配線ゼロ**(GPIO マトリクスで UART1_TX と UART2_RX を同一ピンに載せる)、`peer/uart_midi` は**既存の peer 配線をそのままクロスとして使う**。どちらも新しい配線を必要としない。
 - 実機テストのスケッチは、準備完了を繰り返し告げてホストに促されてから走る形にした。書き込みツールがボードをリセットし、コンソールが開かれるのはその後なので、`setup()` で出した結果は誰も聞いていないうちに終わる。
 - `examples/UartMidiMonitor` を追加した。監視をアプリケーションポートに置き、通し経路とは別のルートにすることで、表示が遅くても音が遅れない形にしてある。
+- **USB Device MIDI ポートを実装した**(Phase 6)。`espmidi::UsbDevicePort` が `EspUsbDeviceMidi` の生パケット API に乗り、宣言された cable 数だけ席を供給する。ホストの mount / unmount を席の状態に反映し、宣言されていない cable のパケットは捨てて数える。
+- **cable 数の向きの反転を API で防いだ。** `EspUsbDevice` の `inCableCount()` は device → host なのでこのライブラリの**出力**ポート、`outCableCount()` は**入力**ポートになる。ポート側は `inPortCount()` / `outPortCount()` とこのライブラリの向きで数える。**対称な cable 構成では取り違えを検出できない**ため、peer テストの機器は 2 / 3 の非対称にした。
+- `peer/usb_midi` を追加し、実機で確認した。**cable 数そのものを `getMidiPortInfo()` で assert**してから往復を見る。DUT 側は素の `EspUsbHost` で、両端が同じコードでパケットを組んで誤りが打ち消し合うのを避けた。
+- `examples/UsbMidiDevice` を追加した。PC に 2 ポートの USB MIDI インターフェースとして見え、ポート 1 が MIDI DIN 対、ポート 2 がボード自身になる。
+- 兄弟ライブラリの依存を**公開バージョン**に固定した(`EspUsbHost` 2.7.5 / `EspUsbDevice` 2.0.2)。依頼 1・2 の cable 対応はどちらもリリース済みなので、`*_local` プロファイルは開発版を試すときだけ使う。
 - 基盤ライブラリへの変更依頼 2 件を提案した(`docs/LIBRARY_REQUESTS.ja.md`)。**両方の cable 数対応が実装された**ので、実装結果(API の形、提案の誤りの訂正、実装時に判明した注意点)を `docs/PORTS.ja.md` と `tests/TEST_PLAN.ja.md` へ反映した。cable 名は両側とも見送り。

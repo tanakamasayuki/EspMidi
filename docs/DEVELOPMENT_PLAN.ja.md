@@ -4,7 +4,7 @@
 
 ## 現在地
 
-**Phase 5 完了。** core に加えて最初のポートである UART が動きます。**実機で検証済みです。**
+**Phase 6 完了。** core に加えて UART と USB Device のポートが動きます。**どちらも実機で検証済みです。**
 
 - `src/EspMidiMessage.h` — `Message` / `PortId` / `Timestamp` / `MessageType`、ステータス分類とデータ長表、短いメッセージの構築と直列化
 - `src/EspMidiParser.h` — MIDI 1.0 バイトストリーム ⇄ `Message`。`Parser` が受信、`Serializer` が送信
@@ -13,10 +13,13 @@
 - `src/EspMidiRouter.h` — `Router` と `AppPort`。ルート、3 段パイプライン、キュー駆動、SysEx 3 規則、ループ規則、診断カウンタ
 - `src/EspMidiFilter.h` — `Filter` / `Transform` / `ValueMap`。宣言的な絞り込みと書き換え
 - `src/EspMidiUart.h` — `UartPort`。31250 baud の `HardwareSerial` に乗る最初のポート
+- `src/EspMidiEspUsbDevice.h` — `UsbDevicePort`。`EspUsbDevice` の cable 数だけポートを供給する
 
-**core は完成しています。** ハードウェアに依存する部分は 1 行もなく、すべてホスト上のテストで固定されています。残るのは USB / BLE のポート(Phase 6 以降)と Control Mapping ヘルパーです。
+**core は完成しています。** ハードウェアに依存する部分は 1 行もなく、すべてホスト上のテストで固定されています。残るのは USB Host / BLE のポート(Phase 7・8)と Control Mapping ヘルパーです。
 
-UART ポートは ESP32-S3 実機で確認しました。`loopback/uart_midi`(1 台・**配線ゼロ**)と `peer/uart_midi`(2 台・既存配線をクロス)がどちらも通っています。
+実機で確認したのは次のとおりです。`loopback/uart_midi`(1 台・**配線ゼロ**)、`peer/uart_midi`(2 台・既存配線をクロス)、`peer/usb_midi`(2 台・USB 直結、**cable 数を descriptor から読んで assert**)。
+
+兄弟ライブラリの依存は**公開バージョン**です(`EspUsbHost` 2.7.5 / `EspUsbDevice` 2.0.2)。依頼 1・2 の cable 対応はどちらもリリース済みなので、`*_local` プロファイルは開発版を試すときだけ使います。
 
 ## 実装順
 
@@ -30,7 +33,7 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 | 3 | ルーティングと駆動。Route / 3 段パイプライン / キュー / SysEx 3 規則 / アプリケーションポート | `unit/routing`、`unit/sysex_rules` | **完了** |
 | 4 | フィルタと変換 | `unit/filter`、`unit/transform` | **完了** |
 | 5 | UART ポート | `unit/serializer`、`unit/uart_port`、`loopback/uart_midi`(配線ゼロ)、`peer/uart_midi` | **完了(実機検証済み)** |
-| 6 | USB Device ポート | `peer/usb_midi` | 予定([依頼 1](LIBRARY_REQUESTS.ja.md) の cable 数は実装済み) |
+| 6 | USB Device ポート | `unit/usb_device_port`、`peer/usb_midi` | **完了(実機検証済み)** |
 | 7 | USB Host ポート | `peer/usb_midi` | 予定([依頼 2](LIBRARY_REQUESTS.ja.md) の cable 数は実装済み) |
 | 8 | BLE ポート(Device / Host) | `peer/ble_midi` | 予定 |
 | 9 | Control Mapping ヘルパー | `unit/control_mapping`、`manual/` | 予定 |
@@ -131,13 +134,23 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 - **実機テストのスケッチは `setup()` で結果を出してはいけない。** 書き込みツールがボードをリセットし、コンソールはその後に開かれるので、起動直後の出力は誰も聞いていないうちに終わる。準備完了は**繰り返し**告げ、本番はホストに促されてから走らせる。
 - **USB を使わないプロファイルはボード指定を `esp32:esp32:esp32s3` だけにする。** `USBMode` を指定する理由が無い。
 
-### Phase 6: USB Device ポート
+### Phase 6: USB Device ポート(完了・実機検証済み)
 
-- `EspMidiEspUsbDevice.h`。生パケット API に乗る
-- `EspUsbDeviceMidi(device, cableCount)` で宣言した cable 数だけポートを供給する
-- cable 範囲外への送信を拒否する(`EspUsbDevice` の helper と同じ方針)
-- 複合構成では descriptor サイズに注意する。`descriptorLength()` で事前に分かる([LIBRARY_REQUESTS.ja.md](LIBRARY_REQUESTS.ja.md) の依頼 1)
-- `peer/usb_midi`。**cable 数そのものを `getMidiPortInfo()` で assert してから**往復を確認する([../tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md) の「cable のテストで気をつけること」)
+- ✅ `EspMidiEspUsbDevice.h`。生パケット API(`readPacket` / `writePacket`)に乗る
+- ✅ `EspUsbDeviceMidi(device, inCableCount, outCableCount)` で宣言した cable 数だけポートを供給する
+- ✅ cable 範囲外を拒否する
+- ✅ `peer/usb_midi`。**cable 数そのものを `getMidiPortInfo()` で assert してから**往復を確認する([../tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md) の「cable のテストで気をつけること」)
+- ✅ `examples/UsbMidiDevice`
+
+実装で確定した細部:
+
+- **cable 数の向きは反転する。** `inCableCount()` は device → host なので**出力**ポート、`outCableCount()` は host → device なので**入力**ポートになる。ポート側の数え方はこのライブラリの向きに統一した(`inPortCount()` / `outPortCount()`)。
+- **対称な cable 構成では取り違えを検出できない。** 受信メッセージの cable 番号は自分のヘッダから読んだ値なので、往復しても正しく見える。だから peer テストの機器は **2 / 3 の非対称**にした。
+- **cable 数 0 はポート 1 本ではない。** その方向のポートを作らない。
+- **席が使えるかどうかはホストが決める。** `ready()`(= `tud_mounted()`)を `update()` が追い、mount / unmount で状態だけが動く。**席は消えない**ので抜き差しでルートを張り直さない。
+- **unmount 中のストリームは捨てる。** `0xF7` を送る相手がもういない。次のダンプが打ち切られたダンプの続きにならないよう、エンコーダを畳む。
+- **宣言されていない cable のパケットは捨てて数える**(`unknownCablePackets()`)。捨てなければ別の席に載る。
+- **peer テストの descriptor は小さく保つ。** ESP-IDF の USB Host は列挙時の control transfer より長い configuration descriptor を拒否し、Arduino のプリコンパイル済みライブラリではその上限が 256 バイト。16 cable は正当な USB で PC 相手には動くが、この試験機では列挙できない。
 
 ### Phase 7: USB Host ポート
 
@@ -171,7 +184,7 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 | example 候補 | 必要な Phase |
 | --- | --- |
 | ~~UART MIDI のモニタ~~ → `UartMidiMonitor` | 5 |
-| USB Device MIDI(PC から見える最小構成) | 6 |
+| ~~USB Device MIDI(PC から見える最小構成)~~ → `UsbMidiDevice` | 5, 6 |
 | USB Host の演奏を UART の音源へ | 5, 7 |
 | USB Host の演奏を PC と外部音源へ同時に(UC1) | 5, 6, 7 |
 | 複数機器を集約して PC の複数ポートに(UC2) | 6, 7 |

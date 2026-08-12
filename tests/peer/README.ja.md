@@ -61,11 +61,10 @@ BLE のテストは、前回実行のペアリング状態が結果を変えな�
 
 ## 追加済み
 
-- `uart_midi`: 既存配線をクロスとして使い、UART ポートの双方向を確認する(Phase 5)。ノート / CC / SysEx を両向きに通します。
-
-1 台で済む往復は [`../loopback/uart_midi/`](../loopback/uart_midi/) にあります。こちらが足すのは **2 つ目のクロック**です。各ボードが、自分が作っていない信号のビットタイミングを解いています。
+- `uart_midi`: 既存配線をクロスとして使い、UART ポートの双方向を確認する(Phase 5)。ノート / CC / SysEx を両向きに通します。1 台で済む往復は [`../loopback/uart_midi/`](../loopback/uart_midi/) にあり、こちらが足すのは **2 つ目のクロック**です(各ボードが、自分が作っていない信号のビットタイミングを解いています)。
+- `usb_midi`: USB Device ポートの境界(Phase 6)。**cable 数そのものを `getMidiPortInfo()` で assert**してから、cable を跨いだ往復と SysEx を確認します。DUT 側は素の `EspUsbHost` です — 両端が同じコードでパケットを組むと、cable ニブルの間違いが打ち消し合うためです。
 
 ## 追加予定
 
-- `usb_midi`: USB Device ポートと USB Host ポートの境界。cable を跨いだ往復を含む(Phase 6・7)。
+- `usb_midi` の USB Host ポート側(Phase 7)。DUT を `EspMidi` の USB Host ポートに置き換える。
 - `ble_midi`: BLE MIDI Device ポートと BLE MIDI Host ポートの境界。タイムスタンプと SysEx 分割を含む(Phase 8)。

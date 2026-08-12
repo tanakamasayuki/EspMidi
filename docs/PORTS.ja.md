@@ -13,7 +13,7 @@
 | ポート | ヘッダ | 依存 | 対象 SoC | 状況 |
 | --- | --- | --- | --- | --- |
 | UART MIDI | `EspMidiUart.h` | なし(`HardwareSerial`) | 全 ESP32 | **実装済み(実機検証済み)** |
-| USB Device MIDI | `EspMidiEspUsbDevice.h` | `EspUsbDevice` | S2 / S3 / P4 | 予定(Phase 6) |
+| USB Device MIDI | `EspMidiEspUsbDevice.h` | `EspUsbDevice` 2.0.2 以降 | S2 / S3 / P4 | **実装済み(実機検証済み)** |
 | USB Host MIDI | `EspMidiEspUsbHost.h` | `EspUsbHost` | S2 / S3 / P4 | 予定(Phase 7) |
 | BLE MIDI Device | `EspMidiEspBle.h` | `EspBle` | BLE を持つ SoC | 予定(Phase 8) |
 | BLE MIDI Host | `EspMidiEspBle.h` | `EspBle` | BLE を持つ SoC | 予定(Phase 8) |
@@ -60,9 +60,30 @@ void loop() {
 - タイムスタンプ: なし
 - USB MIDI イベントパケット(4 バイト、上位ニブル = cable、下位ニブル = CIN)⇄ `espmidi::Message` の変換は core が持つ
 - SysEx は CIN 0x4〜0x7 で組み立てる
-- 受信は `readPacket()` のポーリング。`update()` 駆動と相性が良い
+- 受信は `readPacket()` のポーリング。`update()` 駆動と相性が良い。**1 回で読むのは `ESPMIDI_USB_PACKETS_PER_UPDATE`(既定 32)パケットまで**
+- `begin()` は**スタックを起動した後**に呼ぶ。cable 数が確定するのはそれからで、席はその時点の本数で作られる
+- 席が使えるかどうかはホストが決める。`EspUsbDevice::ready()`(= `tud_mounted()`)を `update()` が追い、mount で `Available`、unmount で `Disconnected` になる。**席そのものは消えない**ので、抜き差ししてもルートは張り直さない
+- **宣言されていない cable のパケットは捨てる。** cable 番号はパケットヘッダから読んだ値なので、捨てなければ別の席に載る。`unknownCablePackets()` で数が読める
 - cable 数は `EspUsbDeviceMidi(device, cableCount)` または `(device, inCableCount, outCableCount)` で宣言する。**方向ごとに本数を変えられる。** `MAX_CABLES` は 16 で、`EspMidi` の 1 エンドポイント上限と一致する
 - 方向の呼び方はホスト視点で `EspUsbHostMidiPortInfo` と統一されている(IN = device → host)
+
+**cable 数の向きは反転します。** ここが Phase 6 で最も間違えやすい点です。
+
+| `EspUsbDeviceMidi` | 意味 | `EspMidi` |
+| --- | --- | --- |
+| `inCableCount()` | device → host(送る) | **出力ポート** `outPortCount()` |
+| `outCableCount()` | host → device(受ける) | **入力ポート** `inPortCount()` |
+
+`espmidi::UsbDevicePort` の側はこのライブラリの向きで数えます(`inPortCount()` / `outPortCount()`)。取り違えると全ポートが逆向きに動き、**対称な cable 構成ではテストで気付けません**(受信メッセージの cable 番号は自分のヘッダから読んだ値なので往復しても正しく見える)。だから peer テストの機器は 2 / 3 の非対称にしてあります。
+
+```cpp
+EspUsbDeviceMidi usbMidi(usb, 2, 3);          // 2 送信 / 3 受信(ホスト視点)
+espmidi::UsbDevicePort port(router, usbMidi, usb);
+usb.begin(config);
+port.begin("USB MIDI");                        // 出力 2 / 入力 3
+```
+
+**`espmidi::BasicUsbDevicePort<M, D>` が本体で、`UsbDevicePort` はその別名です。** UART と同じくテンプレートなので、cable と席の対応・mount の扱い・未宣言 cable の破棄まですべてホスト上のテストで固定されています。
 
 **PC から見える構成。** MIDI インターフェース 1 個で、cable 数だけポートが並びます。MIDI 単独構成でも、HID / CDC / MSC を含む複合 USB Device の一部としても使えます。
 
