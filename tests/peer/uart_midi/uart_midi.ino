@@ -32,6 +32,12 @@ espmidi::AppPort app(router, "test");
 uint8_t g_sysex[16] = {};
 size_t g_sysexLength = 0;
 
+// The board is reset by the flashing tool and the console is opened after that,
+// so a banner printed once in setup() is gone before anyone is listening. It is
+// repeated until the first byte arrives from the console instead.
+bool g_greeted = false;
+uint32_t g_nextBanner = 0;
+
 void print2(uint8_t value)
 {
   if (value < 0x10)
@@ -100,14 +106,19 @@ void setup()
   router.addRoute(app.in(), linkPort.out());
   router.addRoute(linkPort.in(), app.out());
   app.onMessage(onMessage);
-
-  Serial.println("DUT_READY");
 }
 
 void loop()
 {
+  if (!g_greeted && static_cast<int32_t>(millis() - g_nextBanner) >= 0)
+  {
+    Serial.println("DUT_READY");
+    g_nextBanner = millis() + 500;
+  }
+
   if (Serial.available() > 0)
   {
+    g_greeted = true;
     switch (Serial.read())
     {
       case '?':

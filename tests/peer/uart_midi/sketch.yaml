@@ -1,8 +1,8 @@
 profiles:
   # Both roles run on the peer ESP32-S3 pair that is already wired for the USB
-  # tests. USBMode stays at default because the link uses GPIO19 / GPIO20 — the
-  # native USB pins — so the native USB peripheral must not claim them, and the
-  # console stays on UART0.
+  # tests. The link uses GPIO19 / GPIO20 — the native USB pins — so the native
+  # USB peripheral must not claim them: nothing here enables it, and the console
+  # stays on UART0.
   s3_peer_host:
     fqbn: esp32:esp32:esp32s3
     platforms:

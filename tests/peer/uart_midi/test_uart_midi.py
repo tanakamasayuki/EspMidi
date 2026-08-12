@@ -11,8 +11,10 @@ the bit timing of a signal it did not generate.
 
 def test_uart_midi_dut_to_peer(dut, peers):
     device = peers["device"]
+    # Both banners repeat until the board is spoken to: each is reset by the
+    # flashing tool and its console is opened after that, so a sketch that says
+    # it is ready once in setup() has said it before anyone is listening.
     dut.expect_exact("DUT_READY")
-    device.write("?")
     device.expect_exact("PEER_READY")
 
     dut.write("n")

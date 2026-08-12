@@ -12,7 +12,7 @@
 
 | ポート | ヘッダ | 依存 | 対象 SoC | 状況 |
 | --- | --- | --- | --- | --- |
-| UART MIDI | `EspMidiUart.h` | なし(`HardwareSerial`) | 全 ESP32 | 実装済み(実機検証待ち) |
+| UART MIDI | `EspMidiUart.h` | なし(`HardwareSerial`) | 全 ESP32 | **実装済み(実機検証済み)** |
 | USB Device MIDI | `EspMidiEspUsbDevice.h` | `EspUsbDevice` | S2 / S3 / P4 | 予定(Phase 6) |
 | USB Host MIDI | `EspMidiEspUsbHost.h` | `EspUsbHost` | S2 / S3 / P4 | 予定(Phase 7) |
 | BLE MIDI Device | `EspMidiEspBle.h` | `EspBle` | BLE を持つ SoC | 予定(Phase 8) |

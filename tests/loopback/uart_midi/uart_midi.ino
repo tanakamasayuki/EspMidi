@@ -139,9 +139,10 @@ void setup()
   app.onMessage(onMessage);
 
   expect(registry.portCount() == 6, "two UART ports and one application port");
+}
 
-  Serial.println("LOOPBACK_READY");
-
+void runTest()
+{
   // One message per step, with time in between: at 31250 baud three bytes take
   // about a millisecond, and separating them keeps a failure readable.
   app.sendShort(0x90, 0x3c, 0x64);
@@ -180,7 +181,22 @@ void setup()
   Serial.println(g_failures == 0 ? "OK" : "NG");
 }
 
+// The banner is repeated rather than printed once, and the run waits to be asked
+// for. The board is reset by the flashing tool and the console is opened after
+// that, so anything printed in the first moments of setup() is gone before
+// anyone is listening.
 void loop()
 {
-  pump(100);
+  if (Serial.available() > 0)
+  {
+    Serial.read();
+    runTest();
+    while (true)
+    {
+      pump(1000);
+    }
+  }
+
+  Serial.println("LOOPBACK_READY");
+  pump(500);
 }

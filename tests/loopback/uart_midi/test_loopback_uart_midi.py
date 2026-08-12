@@ -8,7 +8,11 @@ behaviour is fixed in `unit/uart_port`.
 
 
 def test_loopback_uart_midi(dut):
+    # The board repeats its banner and waits to be asked: it is reset by the
+    # flashing tool and the console is opened after that, so a sketch that says
+    # everything in setup() has finished before anyone is listening.
     dut.expect_exact("LOOPBACK_READY")
+    dut.write("g")
 
     dut.expect_exact("RX 90 3C 64")  # note on
     dut.expect_exact("RX B0 07 40")  # control change
