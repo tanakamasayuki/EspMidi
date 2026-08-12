@@ -1,4 +1,9 @@
-// MIDI 1.0 byte stream to espmidi::Message.
+// MIDI 1.0 byte stream ⇄ espmidi::Message.
+//
+// Parser is the receiving half, Serializer the sending one. Both live here for
+// the same reason the USB packet codec keeps its decoder and encoder together:
+// they are two readings of one wire format, and a change to one is nearly always
+// a change to the other.
 //
 // This is what a byte-stream transport needs: UART today, and anything else that
 // delivers a raw MIDI 1.0 stream later. USB does not use it — a USB MIDI event
@@ -262,6 +267,110 @@ private:
   uint8_t assembled_[MaxShortMessageBytes] = {};
   bool inSysEx_ = false;
   bool pendingChunkStart_ = false;
+};
+
+// espmidi::Message to a MIDI 1.0 byte stream.
+//
+// The framing bytes of a data stream are the serializer's job, not the queue's:
+// a chunk carries only its payload, so 0xF0 goes in front of the first chunk and
+// 0xF7 after the last one (docs/DATA_MODEL.ja.md). Everything between is handed
+// to the transport exactly as it arrived, which is what keeps a patch dump from
+// being copied on its way out.
+//
+// Bytes are written through a callback rather than into a buffer so the payload
+// never has to be staged anywhere: the caller writes the chunk straight from the
+// pointer it was given.
+//
+// Running status is not used on the way out. It would save one byte in three on
+// a stream of notes, but an output port carries messages that arrived from
+// several inputs, and a receiver that loses one byte of a compressed stream
+// misreads everything after it rather than one message. The saving is not worth
+// that at 31250 baud.
+class Serializer
+{
+public:
+  // Forgets an open stream without closing it. A port calls this when its link
+  // goes away and the bytes could not be sent anyway.
+  void reset() { open_ = false; }
+
+  // True while a data stream has been started but not finished, i.e. an 0xF7 is
+  // still owed to whatever is listening.
+  bool inStream() const { return open_; }
+
+  // Writes one message. `write(const uint8_t *, size_t)` returns false if the
+  // transport refused the bytes; serialize() then stops and returns false.
+  //
+  // Returns false for a message it cannot express — a status byte with no fixed
+  // length, or a continuation chunk for a stream that was never started.
+  template <typename Fn>
+  bool serialize(const Message &message, Fn &&write)
+  {
+    if (!message.chunk)
+    {
+      uint8_t bytes[MaxShortMessageBytes] = {};
+      const size_t length = serializeShortMessage(message, bytes, sizeof(bytes));
+      if (length == 0)
+      {
+        return false;
+      }
+      return write(static_cast<const uint8_t *>(bytes), length);
+    }
+
+    if (message.chunkStart)
+    {
+      static const uint8_t start = 0xf0;
+      if (!write(&start, static_cast<size_t>(1)))
+      {
+        return false;
+      }
+      open_ = true;
+    }
+    else if (!open_)
+    {
+      // A continuation with no beginning. Emitting the payload alone would put
+      // loose data bytes on the wire, which a receiver resolves against whatever
+      // running status it happens to hold.
+      return false;
+    }
+
+    if (message.chunkLength > 0 && message.chunkData)
+    {
+      if (!write(message.chunkData, message.chunkLength))
+      {
+        open_ = false;
+        return false;
+      }
+    }
+
+    if (message.chunkEnd)
+    {
+      open_ = false;
+      static const uint8_t end = 0xf7;
+      if (!write(&end, static_cast<size_t>(1)))
+      {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Ends an open stream with an 0xF7 (docs/ROUTING.ja.md, rule 2). A port calls
+  // this when the source of a stream disappears mid-dump, so the device on the
+  // other end is not left waiting for a terminator that is never coming.
+  template <typename Fn>
+  bool closeStream(Fn &&write)
+  {
+    if (!open_)
+    {
+      return true;
+    }
+    open_ = false;
+    static const uint8_t end = 0xf7;
+    return write(&end, static_cast<size_t>(1));
+  }
+
+private:
+  bool open_ = false;
 };
 
 } // namespace espmidi

@@ -8,7 +8,9 @@ They all follow the same three steps: 1) start the stacks, 2) create the ports, 
 
 ## Examples
 
-None yet. They are added from the phase in which each port starts working; see [../docs/DEVELOPMENT_PLAN.ja.md](../docs/DEVELOPMENT_PLAN.ja.md) for the planned list.
+- `UartMidiMonitor`: prints UART MIDI to the console while passing it on to a second UART unchanged. Put it between a keyboard and a sound module and the playing keeps working.
+
+More are added from the phase in which each port starts working; see [../docs/DEVELOPMENT_PLAN.ja.md](../docs/DEVELOPMENT_PLAN.ja.md) for the planned list.
 
 ## Layout
 

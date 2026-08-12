@@ -1,0 +1,13 @@
+profiles:
+  # One ESP32-S3, no wiring: the GPIO matrix puts UART1_TX and UART2_RX on the
+  # same pin. The console is UART0 (the board's external USB-serial chip), which
+  # is why USBMode stays at default — the native USB-OTG peripheral is not used.
+  s3_loopback:
+    fqbn: esp32:esp32:esp32s3
+    platforms:
+      - platform: esp32:esp32 (3.3.11)
+        platform_index_url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+    libraries:
+      - dir: ../../../
+
+default_profile: s3_loopback

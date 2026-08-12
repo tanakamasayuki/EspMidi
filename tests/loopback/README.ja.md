@@ -27,6 +27,8 @@ espmidi::UartPort B  ←── UART2_RX ─┘
 
 `uart_set_loop_back()` による UART 内部ループバックでも配線ゼロにできますが、GPIO マトリクス方式は 2 つの実ペリフェラルを通るのでより本物に近くなります。
 
+**Arduino のピン管理を 1 箇所だけ迂回します。** 1 ピンにつき 1 ペリフェラルしか覚えず、2 つ目が同じピンを要求すると 1 つ目を外してしまうためです。受信側を先に `begin()` し、そのあと送信信号を `esp_rom_gpio_connect_out_signal()` でピンに重ねます。出力信号の接続はピンの出力ドライバも有効にし、受信側が張った入力経路には触らないので、1 本のピンを 2 つのペリフェラルが共有できます。
+
 31250 baud で送受信し、`EspMidi` がポート A の入力からポート B の出力へルーティングした結果をシリアルログで確認します。
 
 **実 MIDI DIN(フォトカプラ・220Ω・5V カレントループ)は対象外です。** それは [`../manual/`](../manual/) に隔離します。ここで確認するのは UART バイト層です。
@@ -46,9 +48,10 @@ uv run --env-file .env pytest loopback/ --profile=p4_loopback_local
 
 ## 追加済み
 
-まだありません。[../TEST_PLAN.ja.md](../TEST_PLAN.ja.md) のカバレッジ計画を参照してください。
+- `uart_midi`: UART ポート 2 つの間で `EspMidi` がルーティングする(Phase 5)。ノート / CC / Clock / ピッチベンド / SysEx の往復を確認します。
+
+ポートの挙動そのものは [`../unit/uart_port/`](../unit/uart_port/) がホスト上で固定しているので、**ここで確認するのはバイトが本当にパッドを渡ることだけ**です。
 
 ## 追加予定
 
-- `uart_midi`: UART ポート 2 つの間で `EspMidi` がルーティングする(Phase 5)。
 - `usb_host_device`: ESP32-P4 1台で USB Host ポートと USB Device ポートを同時に動かし、`EspMidi` が両者の間を転送する(Phase 6・7)。

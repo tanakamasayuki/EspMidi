@@ -4,16 +4,19 @@
 
 ## 現在地
 
-**Phase 4 完了。** 共通表現、ワイヤ形式のコーデック、ポートモデル、ルーティング、フィルタと変換が揃い、すべてホスト上のテストで固定されています。
+**Phase 5 完了(実機検証待ち)。** core に加えて最初のポートである UART が動きます。
 
 - `src/EspMidiMessage.h` — `Message` / `PortId` / `Timestamp` / `MessageType`、ステータス分類とデータ長表、短いメッセージの構築と直列化
-- `src/EspMidiParser.h` — MIDI 1.0 バイトストリーム → `Message`(UART 用)
+- `src/EspMidiParser.h` — MIDI 1.0 バイトストリーム ⇄ `Message`。`Parser` が受信、`Serializer` が送信
 - `src/EspMidiUsbPacket.h` — USB MIDI イベントパケット ⇄ `Message`(USB Host / Device 共用)
 - `src/EspMidiPort.h` — `PortRegistry`。Endpoint / InPort / OutPort、席モデル、状態、メタデータ、ポート群、通知
 - `src/EspMidiRouter.h` — `Router` と `AppPort`。ルート、3 段パイプライン、キュー駆動、SysEx 3 規則、ループ規則、診断カウンタ
 - `src/EspMidiFilter.h` — `Filter` / `Transform` / `ValueMap`。宣言的な絞り込みと書き換え
+- `src/EspMidiUart.h` — `UartPort`。31250 baud の `HardwareSerial` に乗る最初のポート
 
-**core は完成しました。** ハードウェアに依存する部分は 1 行もなく、すべてホスト上のテストで固定されています。残るのは実際のトランスポートに繋ぐポート(Phase 5 以降)と Control Mapping ヘルパーだけです。
+**core は完成しています。** ハードウェアに依存する部分は 1 行もなく、すべてホスト上のテストで固定されています。残るのは USB / BLE のポート(Phase 6 以降)と Control Mapping ヘルパーです。
+
+UART ポートは実機での検証がまだです。`loopback/uart_midi`(配線ゼロ)と `peer/uart_midi`(既存配線をクロス)を用意してあり、ボードを繋いで走らせるところまでが残りです。
 
 ## 実装順
 
@@ -26,7 +29,7 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 | 2 | ポートモデル。Endpoint / Port / 席 / 状態 / メタデータ / ポート群 | `unit/port_model` | **完了** |
 | 3 | ルーティングと駆動。Route / 3 段パイプライン / キュー / SysEx 3 規則 / アプリケーションポート | `unit/routing`、`unit/sysex_rules` | **完了** |
 | 4 | フィルタと変換 | `unit/filter`、`unit/transform` | **完了** |
-| 5 | UART ポート | `loopback/uart_midi`(配線ゼロ) | 予定 |
+| 5 | UART ポート | `unit/serializer`、`unit/uart_port`、`loopback/uart_midi`(配線ゼロ)、`peer/uart_midi` | **完了(実機検証待ち)** |
 | 6 | USB Device ポート | `peer/usb_midi` | 予定([依頼 1](LIBRARY_REQUESTS.ja.md) の cable 数は実装済み) |
 | 7 | USB Host ポート | `peer/usb_midi` | 予定([依頼 2](LIBRARY_REQUESTS.ja.md) の cable 数は実装済み) |
 | 8 | BLE ポート(Device / Host) | `peer/ble_midi` | 予定 |
@@ -109,11 +112,22 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 - **トランスポートで範囲外に出たノートは捨てる。** 折り返すと鍵盤の反対端で鳴る。
 - **フィルタが最初のチャンクを弾いた出力はストリームを掴まない。** 掴むと、送っていないストリームで出力が塞がったままになる。
 
-### Phase 5: UART ポート
+### Phase 5: UART ポート(完了・実機検証待ち)
 
-- `EspMidiUart.h`。31250 baud、送受信、SysEx のチャンク化
-- `loopback/uart_midi`。GPIO マトリクスで UART1_TX と UART2_RX を同一 GPIO に割り当てる配線ゼロ構成
-- `peer/uart_midi`。既存の peer 配線を役割ごとの TX / RX 入れ替えでクロスとして使う
+- ✅ `EspMidiUart.h`。31250 baud、送受信、SysEx の枠付け
+- ✅ `espmidi::Serializer`(送信側のコーデック)。`Parser` の対になる半分として `EspMidiParser.h` へ
+- ✅ `loopback/uart_midi`。GPIO マトリクスで UART1_TX と UART2_RX を同一 GPIO に割り当てる配線ゼロ構成
+- ✅ `peer/uart_midi`。既存の peer 配線を役割ごとの TX / RX 入れ替えでクロスとして使う
+- ✅ `examples/UartMidiMonitor`
+
+実装で確定した細部:
+
+- **ポートはシリアルオブジェクトのテンプレート**(`BasicUartPort<T>`、`UartPort` は `HardwareSerial` 版の別名)。ポートの挙動をホスト上で固定でき、**実機のテストに残るのはバイトがパッドを渡ることだけ**になる。
+- **送信に running status を使わない。** 1 バイト在庫が減るより、1 つの出力に複数入力のメッセージが乗ることと、圧縮したストリームは 1 バイト落ちると以降すべてが読み違いになることのほうが重い。
+- **枠付けは `Serializer` が持つ。** チャンクが運ぶのはペイロードだけなので、`0xF0` と `0xF7` は送信側で付ける。始まりを見ていない継続チャンクは拒否する(裸のデータバイトを線に出さないため)。
+- **`end()` は送信途中のストリームを `0xF7` で閉じる。** 相手が中途半端なダンプを抱えたまま待ち続けないため(規則 2)。
+- **1 回の `update()` で読むバイト数に上限がある**(`ESPMIDI_UART_RX_BYTES`、既定 64)。ダンプを流す機器が `loop()` を占有しない。
+- **配線ゼロのループバックには GPIO マトリクスへの直接接続が要る。** Arduino のピン管理は 1 ピンにつき 1 ペリフェラルしか覚えず、2 つ目が要求すると 1 つ目を外してしまうので、受信側を先に張ってから送信信号を `esp_rom_gpio_connect_out_signal()` で重ねる。
 
 ### Phase 6: USB Device ポート
 
@@ -154,7 +168,7 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 
 | example 候補 | 必要な Phase |
 | --- | --- |
-| UART MIDI のモニタ | 5 |
+| ~~UART MIDI のモニタ~~ → `UartMidiMonitor` | 5 |
 | USB Device MIDI(PC から見える最小構成) | 6 |
 | USB Host の演奏を UART の音源へ | 5, 7 |
 | USB Host の演奏を PC と外部音源へ同時に(UC1) | 5, 6, 7 |

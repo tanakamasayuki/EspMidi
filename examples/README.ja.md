@@ -8,7 +8,9 @@ examples はすべて**実用例**です。実ハードウェア構成でその�
 
 ## Examples
 
-まだありません。ポートが動くようになった Phase から追加します。追加予定の一覧は [../docs/DEVELOPMENT_PLAN.ja.md](../docs/DEVELOPMENT_PLAN.ja.md) にあります。
+- `UartMidiMonitor`: UART の MIDI をコンソールに表示しながら、もう 1 本の UART へそのまま流します。キーボードと音源の間に挟んでも演奏が止まりません。
+
+ポートが動くようになった Phase から順に増やします。追加予定の一覧は [../docs/DEVELOPMENT_PLAN.ja.md](../docs/DEVELOPMENT_PLAN.ja.md) にあります。
 
 ## 置き方
 

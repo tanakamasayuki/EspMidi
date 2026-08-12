@@ -12,7 +12,7 @@
 
 | ポート | ヘッダ | 依存 | 対象 SoC | 状況 |
 | --- | --- | --- | --- | --- |
-| UART MIDI | `EspMidiUart.h` | なし(`HardwareSerial`) | 全 ESP32 | 予定(Phase 5) |
+| UART MIDI | `EspMidiUart.h` | なし(`HardwareSerial`) | 全 ESP32 | 実装済み(実機検証待ち) |
 | USB Device MIDI | `EspMidiEspUsbDevice.h` | `EspUsbDevice` | S2 / S3 / P4 | 予定(Phase 6) |
 | USB Host MIDI | `EspMidiEspUsbHost.h` | `EspUsbHost` | S2 / S3 / P4 | 予定(Phase 7) |
 | BLE MIDI Device | `EspMidiEspBle.h` | `EspBle` | BLE を持つ SoC | 予定(Phase 8) |
@@ -32,6 +32,23 @@ MIDI 1.0 のバイトストリームを 31250 baud で送受信します。MIDI 
 - タイムスタンプ: なし(`TimestampUnit::None`)
 - running status の解決とデータ長の判定は core のパーサが行う
 - SysEx は境界(`0xF0` / `0xF7`)で判定してチャンクにする
+- `begin(name, rxPin, txPin)` が `HardwareSerial` を 31250 baud で開き、席を供給し、出力の sink を登録する。**冪等**で、再設定は `begin()` をもう一度呼ぶだけ
+- 受信は `update()` のポーリング。**1 回で読むのは `ESPMIDI_UART_RX_BYTES`(既定 64)まで**で、ダンプを流す機器が `loop()` を占有しない
+- 送信は running status を使わない。1 つの出力ポートには複数の入力から来たメッセージが乗るうえ、圧縮したストリームは 1 バイト落ちると以降すべてが読み違いになるため
+
+```cpp
+espmidi::UartPort uart(router, Serial1, 1);
+uart.begin("MIDI DIN", RX_PIN, TX_PIN);
+
+void loop() {
+  uart.update();
+  router.update();
+}
+```
+
+**枠付けはポートの仕事です。** チャンクが運ぶのはペイロードだけなので、`0xF0` は最初のチャンクの前、`0xF7` は最後のチャンクの後ろに `espmidi::Serializer` が付けます。`end()` は**送信途中のストリームを `0xF7` で閉じてから**閉じます(規則 2)。相手の機器が中途半端なダンプを抱えたまま待ち続けないためです。
+
+**`espmidi::BasicUartPort<T>` が本体で、`UartPort` は `HardwareSerial` を当てた別名です。** テンプレートにしてあるのは、ポートの挙動(席の供給、受信の router 到達、枠付け、送信バッファ満杯、中断したダンプの終端)をホスト上のテストで固定するためです。実機のテストに残るのは**バイトが本当にパッドを渡ること**だけになります。
 
 **実 MIDI DIN との関係。** 5V カレントループ、フォトカプラ、220Ω といった物理層は本ポートの外側です。UART の TX / RX に何をつなぐかはスケッチとハードウェアの責任で、自動テストは UART バイト層までを対象とします([../tests/TEST_PLAN.ja.md](../tests/TEST_PLAN.ja.md))。
 
