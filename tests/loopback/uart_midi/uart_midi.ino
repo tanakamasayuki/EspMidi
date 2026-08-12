@@ -187,9 +187,11 @@ void runTest()
 // anyone is listening.
 void loop()
 {
-  if (Serial.available() > 0)
+  // The one character the test sends, not just any byte: a board's UART0 can pick
+  // up a stray one as the flashing tool releases the line, and starting the run on
+  // that would mean the console is opened after everything has already been said.
+  if (Serial.available() > 0 && Serial.read() == 'g')
   {
-    Serial.read();
     runTest();
     while (true)
     {

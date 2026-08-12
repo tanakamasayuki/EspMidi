@@ -4,7 +4,39 @@
 
 ESP32 の MIDI インターフェースの間にすわり、統合・複製・振り分けをするための Arduino 向けライブラリです。USB Host、USB Device、BLE、UART でつながった MIDI 入出力を共通のポートとして扱い、その間でメッセージを転送します。
 
-> **開発中です。** 基本方針と仕様が固まり、リポジトリの骨格とテスト環境が揃った段階(Phase 0 完了)です。**まだ動く機能はありません。** 実装の現在地は [docs/DEVELOPMENT_PLAN.ja.md](docs/DEVELOPMENT_PLAN.ja.md)、各ポートの状況は [docs/PORTS.ja.md](docs/PORTS.ja.md) を参照してください。
+> **未リリースです。** 実装計画は完了し、**同梱ポートはすべて ESP32-S3 実機で動作を確認しています**。API はまだ変わりえます。実装の現在地は [docs/DEVELOPMENT_PLAN.ja.md](docs/DEVELOPMENT_PLAN.ja.md)、各ポートの状況は [docs/PORTS.ja.md](docs/PORTS.ja.md) を参照してください。
+
+## 15 行で USB MIDI キーボード → MIDI DIN 音源
+
+```cpp
+#include <EspMidiEspUsbHost.h>
+#include <EspMidiUart.h>
+
+EspUsbHost usb;
+
+espmidi::PortRegistry registry;
+espmidi::Router router(registry);
+
+espmidi::UsbHostPort keyboards(router, usb);
+espmidi::UartPort din(router, Serial1, 1);
+
+void setup() {
+  usb.begin();                    // 1) スタックはスケッチが持つ
+  keyboards.begin();              // 2) ポート
+  din.begin("MIDI DIN", 20, 19);
+  router.addRoute(espmidi::InGroup::all(), din.out());  // 3) ルート
+}
+
+void loop() {
+  keyboards.update();
+  din.update();
+  router.update();
+}
+```
+
+**キーボードをどこにも書いていません。** USB Host の席は挿したときに現れるので、ルートは「すべての入力」に対して張ります。抜き差ししてもルートは消えず、挿し直せばそのまま続きます。出力先を増やしたいならルートを 1 本足すだけです。
+
+構成は examples すべてで「1) スタック起動 → 2) ポート生成 → 3) ルート」の 3 段に揃えてあります。
 
 ## 何をするものか
 
@@ -41,12 +73,39 @@ UART MIDI ──────┘   フィルタ・基本変換            └─ 
 
 | ポート | ヘッダ | 依存 | 状況 |
 | --- | --- | --- | --- |
-| UART MIDI | `EspMidiUart.h` | なし | 予定 |
-| USB Device MIDI | `EspMidiEspUsbDevice.h` | [EspUsbDevice](https://github.com/tanakamasayuki/EspUsbDevice) | 予定 |
-| USB Host MIDI | `EspMidiEspUsbHost.h` | [EspUsbHost](https://github.com/tanakamasayuki/EspUsbHost) | 予定 |
-| BLE MIDI Device / Host | `EspMidiEspBle.h` | [EspBle](https://github.com/tanakamasayuki/EspBle) | 予定 |
+| UART MIDI | `EspMidiUart.h` | なし(`HardwareSerial`) | **実機検証済み** |
+| USB Device MIDI | `EspMidiEspUsbDevice.h` | [EspUsbDevice](https://github.com/tanakamasayuki/EspUsbDevice) 2.0.2+ | **実機検証済み** |
+| USB Host MIDI | `EspMidiEspUsbHost.h` | [EspUsbHost](https://github.com/tanakamasayuki/EspUsbHost) 2.7.5+ | **実機検証済み** |
+| BLE MIDI Device / Host | `EspMidiEspBle.h` | [EspBle](https://github.com/tanakamasayuki/EspBle) 1.2.0+ | **実機検証済み** |
 
 詳細と PC からの見え方は [docs/PORTS.ja.md](docs/PORTS.ja.md) にあります。
+
+**外部のポートも参加できます。** ポートは header-only で、追加対象がこのリポジトリ内にある必要はありません。同梱ポートのうち UART が最も小さいので、書くときはそれを読むのが早いです。
+
+## MIDI コントローラにもなります
+
+つまみ・ボタン・エンコーダ・クロックのヘルパーが `EspMidi.h` に入っています(`espmidi::Button` / `Analog` / `Encoder` / `ControlOutput` / `ClockGenerator` / `ClockCounter`)。
+
+**ピンにも時刻にも触りません。** スケッチが読んだ値と今の時刻を渡します。だから ADC でもポートエキスパンダでもタッチセンサでもネットワーク越しの値でも同じヘルパーが動き、跳ねるスイッチやテンポ変化がホスト上のテストで再現できます。
+
+```cpp
+knob.update(analogRead(KNOB_PIN));                     // 値を渡すだけ
+button.update(digitalRead(BUTTON_PIN) == LOW, millis());
+```
+
+出力先はアプリケーションポートなので、**つまみが作った Control Change を USB と MIDI DIN と BLE へ同時に出せます**。
+
+## examples
+
+すべて**実用例**です。そのまま書き込めます。
+
+| example | 内容 |
+| --- | --- |
+| [`UartMidiMonitor`](examples/UartMidiMonitor/) | UART の MIDI を表示しながら、もう 1 本の UART へそのまま流す |
+| [`UsbMidiDevice`](examples/UsbMidiDevice/) | PC に 2 ポートの USB MIDI インターフェースとして見える |
+| [`UsbHostToUart`](examples/UsbHostToUart/) | USB MIDI キーボードで DIN 音源を鳴らしながら PC にも流す |
+| [`BleMidiToUart`](examples/BleMidiToUart/) | ワイヤレス BLE MIDI キーボードで DIN 音源を鳴らす |
+| [`GpioControls`](examples/GpioControls/) | つまみ・ボタン・エンコーダの MIDI コントローラ |
 
 ## 対応環境
 
@@ -62,6 +121,8 @@ UART MIDI ──────┘   フィルタ・基本変換            └─ 
 - **core は移植可能な純粋 C++** です。Arduino も ESP-IDF もハードウェアも要求しないので、仕様を固定するテストはホスト上で数秒で回ります。
 - **長い SysEx を前提にしています。** 音色ダンプをコピーなしで素通しできる形にしてあります。
 - **MIDI 2.0 へ地続きです。** 内部表現は MIDI 1.0 バイト列ですが、メッセージ種別の番号、チャンネル座標、タイムスタンプ、チャンクの扱いを UMP に合わせてあるので、対応時にルーティングやフィルタを作り直さずに済みます([docs/DECISIONS.ja.md](docs/DECISIONS.ja.md) の決定 1)。
+- **席は機器より長生きします。** ポートのハンドルは切断で無効になりません。抜き差ししても状態が変わるだけなので、**ルートを張り直す必要がありません**。
+- **駆動はスケッチの `loop()` です。** core は自前のタスクを立てません。トランスポートのタスクから来た受信はキューに写され、パイプラインは `update()` の中だけで走ります。`Router::receive()` はそのためにスレッドセーフです。
 
 ## ドキュメント
 
@@ -72,7 +133,24 @@ UART MIDI ──────┘   フィルタ・基本変換            └─ 
 - [docs/ROUTING.ja.md](docs/ROUTING.ja.md) — ルート、パイプライン、SysEx の規則、ループ防止
 - [docs/PORTS.ja.md](docs/PORTS.ja.md) — 各ポートの挙動と実装状況
 - [docs/DECISIONS.ja.md](docs/DECISIONS.ja.md) — なぜそう設計したのか、採らなかった案
+- [docs/CORE_DESIGN.ja.md](docs/CORE_DESIGN.ja.md) — core / ポート / example の境界と並行性
 - [tests/README.ja.md](tests/README.ja.md) — テスト構成と実行方法
+
+## テスト
+
+```sh
+cd tests
+uv run pytest unit/          # ハードウェア不要、数秒
+```
+
+`unit/` は `g++` だけで回ります。arduino-cli も board package も要りません。**core が Arduino に依存し始めた瞬間に落ちます。**
+
+ポートも `unit/` に入っています。ポートが借りるオブジェクトのテンプレートになっているので、`HardwareSerial` や `EspUsbHost` の代わりに偽物を当てて挙動を固定できます。実機のテストに残るのは、**実機でしか確認できないことだけ**です。
+
+```sh
+uv run --env-file .env pytest loopback/   # 1 台。UART は配線ゼロ
+uv run --env-file .env pytest peer/       # 2 台
+```
 
 ## 関連ライブラリ
 

@@ -52,6 +52,12 @@ uv run --env-file .env pytest loopback/ --profile=p4_loopback_local
 
 ポートの挙動そのものは [`../unit/uart_port/`](../unit/uart_port/) がホスト上で固定しているので、**ここで確認するのはバイトが本当にパッドを渡ることだけ**です。
 
+- `usb_host_device`: ESP32-P4 1台で USB Device ポートと USB Host ポートを同時に動かします(Phase 6・7)。**実 USB ケーブルの両端が `EspMidi` のポート**で、しかも同じ router の中にいます。このディレクトリの存在理由がそのまま出ているテストです。
+
+  **2 つのポートは cable 数の向きを逆に反転するので、ここではそれがちょうど打ち消し合う必要があります。** だから数を定数と比べるのではなく、**互いと比べて** assert しています(device 側 out 2 = host 側 in 2、device 側 in 3 = host 側 out 3)。
+
+  P4 の 2 つのコネクタを結線した状態で使います。UART とは違い**こちらは配線が要ります**。
+
 ## 追加予定
 
-- `usb_host_device`: ESP32-P4 1台で USB Host ポートと USB Device ポートを同時に動かし、`EspMidi` が両者の間を転送する(Phase 6・7)。
+まだありません。

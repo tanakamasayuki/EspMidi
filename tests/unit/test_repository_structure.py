@@ -96,6 +96,9 @@ def test_required_project_files_exist():
         "tests/loopback/uart_midi/uart_midi.ino",
         "tests/loopback/uart_midi/sketch.yaml",
         "tests/loopback/uart_midi/test_loopback_uart_midi.py",
+        "tests/loopback/usb_host_device/usb_host_device.ino",
+        "tests/loopback/usb_host_device/sketch.yaml",
+        "tests/loopback/usb_host_device/test_loopback_usb_host_device.py",
         "tests/peer/README.ja.md",
         "tests/peer/README.md",
         "tests/peer/uart_midi/uart_midi.ino",
@@ -120,6 +123,11 @@ def test_required_project_files_exist():
         "tests/peer/ble_midi/peer_device/sketch.yaml",
         "tests/manual/README.ja.md",
         "tests/manual/control_mapping.ja.md",
+        "tests/manual/uart_midi_din.ja.md",
+        "tests/manual/usb_device_host_os.ja.md",
+        "tests/manual/usb_host_real_devices.ja.md",
+        "tests/manual/ble_midi_pairing.ja.md",
+        "tests/manual/sysex_dump.ja.md",
         "tests/manual/README.md",
     ]
 

@@ -18,12 +18,13 @@
 
 ## 手順
 
-- [`control_mapping.ja.md`](control_mapping.ja.md): 実ボタン・実つまみ・実エンコーダの操作感(Phase 9)。`unit/control_mapping` が固定しているのは値と時刻の扱いで、**人の手に対してどう感じられるかは assert できません**。
+- [`uart_midi_din.ja.md`](uart_midi_din.ja.md): 実 MIDI DIN の物理層(フォトカプラ・220Ω・5V カレントループ)。自動テストは UART バイト層までです。
+- [`usb_device_host_os.ja.md`](usb_device_host_os.ja.md): PC / Mac / DAW からどう見えるか。ポート数は `peer/usb_midi` が assert していますが、**一覧での名前の出方は OS 次第**です。
+- [`usb_host_real_devices.ja.md`](usb_host_real_devices.ja.md): 実際の USB MIDI 機器。複数機器、ハブ経由、複合機器、**シリアルを持たない機器**を含みます。
+- [`ble_midi_pairing.ja.md`](ble_midi_pairing.ja.md): 実 BLE MIDI 機器と OS からの見え方。ペアリングと**ランダムアドレスの機器**を含みます。
+- [`sysex_dump.ja.md`](sysex_dump.ja.md): 実機の音色ダンプ。数 KB のダンプでキューの分割・出力の排他・送信中の切断が効いてきます。
+- [`control_mapping.ja.md`](control_mapping.ja.md): 実ボタン・実つまみ・実エンコーダの操作感。`unit/control_mapping` が固定しているのは値と時刻の扱いで、**人の手に対してどう感じられるかは assert できません**。
 
 ## 追加予定
 
-- `uart_midi_din`: 実 MIDI DIN(フォトカプラ・220Ω・5V カレントループ)経由で外部音源へ送る。自動テストは UART バイト層までなので、物理層はここで確認する(Phase 5)。
-- `usb_device_host_os`: PC / Mac が MIDI インターフェースとして認識し、DAW のポート一覧に **cable 数ぶんのポートが名前付きで並ぶ**ことを確認する(Phase 6)。
-- `usb_host_real_devices`: 実際の USB MIDI キーボード・パッド・音源をつないで動作を確認する。複数機器、USB ハブ経由、複合機器を含む(Phase 7)。
-- `ble_midi_pairing`: 実 BLE MIDI 機器とのペアリングと再接続を確認する。iOS / Android / PC からの見え方も含む(Phase 8)。
-- `sysex_dump`: 実機の音色ダンプ(長い SysEx)を実際に転送し、受け側で正しく読み込めることを確認する(Phase 5 以降)。
+まだありません。手順は揃いました。**どれも一度は人が通す必要があります** — リリース前の確認項目です([../../docs/RELEASE_CHECKLIST.ja.md](../../docs/RELEASE_CHECKLIST.ja.md))。

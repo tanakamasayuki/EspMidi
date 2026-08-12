@@ -18,12 +18,15 @@ Only things that match one of these:
 
 ## Procedures
 
-None yet. See the coverage plan in [../TEST_PLAN.ja.md](../TEST_PLAN.ja.md).
+The procedures themselves are Japanese only.
+
+- [`uart_midi_din.ja.md`](uart_midi_din.ja.md): the physical layer of a real MIDI DIN socket (optocoupler, 220Ω, 5V current loop). The automated tests stop at the UART byte layer.
+- [`usb_device_host_os.ja.md`](usb_device_host_os.ja.md): how a PC, a Mac and a DAW see it. `peer/usb_midi` asserts the port counts; **how they are named in a list is up to the OS**.
+- [`usb_host_real_devices.ja.md`](usb_host_real_devices.ja.md): real USB MIDI devices, including several at once, through a hub, composite devices, and **devices with no serial number**.
+- [`ble_midi_pairing.ja.md`](ble_midi_pairing.ja.md): real BLE MIDI devices and how an OS sees the board, including pairing and **devices with a random address**.
+- [`sysex_dump.ja.md`](sysex_dump.ja.md): a real patch dump. At a few kilobytes the queue splitting, the output exclusivity and a disconnect mid-dump all start to matter.
+- [`control_mapping.ja.md`](control_mapping.ja.md): the feel of real buttons, knobs and encoders. `unit/control_mapping` fixes how values and time are handled; **how that feels under a human hand cannot be asserted**.
 
 ## Planned
 
-- `uart_midi_din`: send to an external sound module over a real MIDI DIN circuit (opto-isolator, 220Ω, 5V current loop). The automated tests stop at the UART byte layer, so the physical layer is verified here (Phase 5).
-- `usb_device_host_os`: confirm a PC or Mac recognises the board as a MIDI interface and that **one named port per cable** appears in a DAW's port list (Phase 6).
-- `usb_host_real_devices`: connect real USB MIDI keyboards, pads and sound modules, including several at once, through a hub, and composite devices (Phase 7).
-- `ble_midi_pairing`: confirm pairing and reconnection with real BLE MIDI devices, and how it appears from iOS, Android and a PC (Phase 8).
-- `sysex_dump`: transfer a real instrument's patch dump (a long SysEx) and confirm the receiving side loads it correctly (Phase 5 onwards).
+Nothing: the procedures are all written. **Each has to be walked through by a person at least once** — they are release gates (see [../../docs/RELEASE_CHECKLIST.md](../../docs/RELEASE_CHECKLIST.md)).

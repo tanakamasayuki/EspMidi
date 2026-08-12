@@ -20,7 +20,7 @@
 
 **実装計画は完了しました。** core、ポート、Control Mapping ヘルパーが揃い、ハードウェアに依存しない部分はすべてホスト上のテストで固定されています。
 
-実機で確認したのは次のとおりです。`loopback/uart_midi`(1 台・**配線ゼロ**)、`peer/uart_midi`(2 台・既存配線をクロス)、`peer/usb_midi`(素の `EspUsbHost` が観測役。**cable 数を descriptor から読んで assert**)、`peer/usb_midi_host`(両端が `EspMidi`。**動的な席の出現**)、`peer/ble_midi`(無線・**タイムスタンプ**とダンプの往復)。
+実機で確認したのは次のとおりです。`loopback/uart_midi`(1 台・**配線ゼロ**)、`peer/uart_midi`(2 台・既存配線をクロス)、`peer/usb_midi`(素の `EspUsbHost` が観測役。**cable 数を descriptor から読んで assert**)、`peer/usb_midi_host`(両端が `EspMidi`。**動的な席の出現**)、`peer/ble_midi`(無線・**タイムスタンプ**とダンプの往復)、`loopback/usb_host_device`(ESP32-P4 1 台・**実 USB ケーブルの両端が `EspMidi` のポート**)。
 
 兄弟ライブラリの依存は**公開バージョン**です(`EspUsbHost` 2.7.5 / `EspUsbDevice` 2.0.2)。依頼 1・2 の cable 対応はどちらもリリース済みなので、`*_local` プロファイルは開発版を試すときだけ使います。
 
@@ -247,6 +247,5 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 実装計画は完了しました。次にやることの候補です。
 
 - **リリース。** [RELEASE_CHECKLIST.ja.md](RELEASE_CHECKLIST.ja.md) の手順で 0.1.0 を出す。
-- **`manual/` の手順を足す。** [../tests/manual/README.ja.md](../tests/manual/README.ja.md) の「追加予定」に 5 件残っている(実 MIDI DIN、Host OS の認識、実 USB MIDI 機器、BLE ペアリング、実機の音色ダンプ)。**実機と人の目が要るので自動化しない**と決めた分です。
-- **`loopback/usb_host_device`**(ESP32-P4 1 台で USB Host と USB Device を同時に)。`examples/UsbHostToUart` の構成をそのまま自動テストにできる。
+- **`manual/` の手順を通す。** 6 件すべて手順は書けています([../tests/manual/README.ja.md](../tests/manual/README.ja.md))。**実機と人の目が要るので自動化しない**と決めた分なので、リリース前に一度ずつ人が通す必要があります。
 - **MIDI 2.0 / UMP。** 器の側は地続きにしてあります([DECISIONS.ja.md](DECISIONS.ja.md) の決定 1)。`MessageType` は UMP のメッセージタイプ番号、`Timestamp` は単位付き、`ValueMap` は端点を正規化して持つので、**幅を広げても既存の規則の意味が変わりません**。
