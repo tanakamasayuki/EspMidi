@@ -63,6 +63,10 @@ enum class Transport : uint8_t
   UsbDevice, // this board seen as a MIDI device
   UsbHost,   // a device plugged into this board
   Ble,
+  // A port the sketch itself drives: it injects messages and receives them.
+  // Control mapping helpers (buttons, encoders) and monitors are built on it,
+  // and it participates in routing exactly like a transport-backed port.
+  Application,
 };
 
 enum class Direction : uint8_t
@@ -163,7 +167,8 @@ struct EndpointIdentity
   // These are always identifiable: there is only one UART1.
   bool isStatic() const
   {
-    return transport == Transport::Uart || transport == Transport::UsbDevice;
+    return transport == Transport::Uart || transport == Transport::UsbDevice ||
+           transport == Transport::Application;
   }
 
   // Whether this identity can be recognised again after a disconnect. A USB

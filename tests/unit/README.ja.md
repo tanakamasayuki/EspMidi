@@ -26,8 +26,8 @@ core は Arduino / ESP-IDF / ハードウェアに依存しない純粋 C++ で�
 | `parser/` | MIDI 1.0 バイトストリーム。running status / real-time の割り込み / SysEx のチャンク化と打ち切り | 実装済み |
 | `usb_packet/` | USB MIDI イベントパケット。CIN 表 / cable → ポート / SysEx の組み立てと分解 / 往復 | 実装済み |
 | `port_model/` | Endpoint / Port / 席モデル / 再接続の照合 / 状態伝播 / ポート群 / 通知 | 実装済み |
-| `routing/` | ルート / 3 段パイプライン / 登録順 / キュー / 循環検査 | 予定(Phase 3) |
-| `sysex_rules/` | SysEx 3 規則(経路は開始時確定 / 切断時に閉じる / 出力排他) | 予定(Phase 3) |
+| `routing/` | ルート / 3 段パイプライン / 登録順 / キュー駆動 / ループ規則 / アプリケーションポート / 診断カウンタ | 実装済み |
+| `sysex_rules/` | SysEx 3 規則(経路は開始時確定 / 切断時に閉じる / 出力排他)とチャンクの分割 | 実装済み |
 | `filter/` | フィルタ条件 | 予定(Phase 4) |
 | `transform/` | チャンネル / ノート / トランスポーズ / Velocity / CC 変換 | 予定(Phase 4) |
 

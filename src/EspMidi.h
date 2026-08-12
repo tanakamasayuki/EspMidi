@@ -37,13 +37,17 @@
 // Endpoints, ports, seats and port groups: what routing addresses.
 #include "EspMidiPort.h"
 
+// Routes, the pipeline that carries messages between ports, and the application
+// port a sketch uses to watch or inject.
+#include "EspMidiRouter.h"
+
 // Wire-format codecs. They live in the core rather than in the ports because
 // the same code serves more than one transport and because keeping them here is
 // what lets every wire format be tested on the host (tests/unit/).
 #include "EspMidiParser.h"    // MIDI 1.0 byte stream (UART)
 #include "EspMidiUsbPacket.h" // USB MIDI 1.0 event packets (USB Host and Device)
 
-// Still to come, in the order given by docs/DEVELOPMENT_PLAN.ja.md: routing, and
-// filtering and transformation.
+// Still to come, in the order given by docs/DEVELOPMENT_PLAN.ja.md: declarative
+// filtering and transformation, and the control mapping helpers.
 
 #endif // ESPMIDI_H

@@ -4,14 +4,15 @@
 
 ## 現在地
 
-**Phase 2 完了。** 共通表現、ワイヤ形式のコーデック、ポートモデルが揃い、すべてホスト上のテストで固定されています。
+**Phase 3 完了。** 共通表現、ワイヤ形式のコーデック、ポートモデル、ルーティングが揃い、すべてホスト上のテストで固定されています。
 
 - `src/EspMidiMessage.h` — `Message` / `PortId` / `Timestamp` / `MessageType`、ステータス分類とデータ長表、短いメッセージの構築と直列化
 - `src/EspMidiParser.h` — MIDI 1.0 バイトストリーム → `Message`(UART 用)
 - `src/EspMidiUsbPacket.h` — USB MIDI イベントパケット ⇄ `Message`(USB Host / Device 共用)
 - `src/EspMidiPort.h` — `PortRegistry`。Endpoint / InPort / OutPort、席モデル、状態、メタデータ、ポート群、通知
+- `src/EspMidiRouter.h` — `Router` と `AppPort`。ルート、3 段パイプライン、キュー駆動、SysEx 3 規則、ループ規則、診断カウンタ
 
-まだルーティングがありません。次は Phase 3(ルーティングと駆動)です。
+**この時点で core は動きます。** ポートを供給してシンクを登録すれば、実機なしでも `AppPort` 同士で end-to-end の転送が回ります。残るのは宣言的なフィルタ / 変換(Phase 4)と、実際のトランスポートに繋ぐポート(Phase 5 以降)です。
 
 ## 実装順
 
@@ -22,7 +23,7 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 | 0 | リポジトリ骨格、docs、テスト環境、CI | `unit/test_repository_structure.py`、`arduino_smoke/` | **完了** |
 | 1 | 共通表現。`Message` / `PortId` / `Timestamp` / `MessageType` と MIDI 1.0 バイトストリームのパーサ(running status、SysEx チャンク)、USB パケットコーデック | `unit/message`、`unit/parser`、`unit/usb_packet` | **完了** |
 | 2 | ポートモデル。Endpoint / Port / 席 / 状態 / メタデータ / ポート群 | `unit/port_model` | **完了** |
-| 3 | ルーティングと駆動。Route / 3 段パイプライン / キュー / SysEx 3 規則 / 循環検査 | `unit/routing`、`unit/sysex_rules` | 予定 |
+| 3 | ルーティングと駆動。Route / 3 段パイプライン / キュー / SysEx 3 規則 / アプリケーションポート | `unit/routing`、`unit/sysex_rules` | **完了** |
 | 4 | フィルタと変換 | `unit/filter`、`unit/transform` | 予定 |
 | 5 | UART ポート | `loopback/uart_midi`(配線ゼロ) | 予定 |
 | 6 | USB Device ポート | `peer/usb_midi` | 予定([依頼 1](LIBRARY_REQUESTS.ja.md) の cable 数は実装済み) |
@@ -69,17 +70,27 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 - **通知は関数ポインタ + コンテキスト。** キャプチャ付き `std::function` はヒープを使い、この通知は機器の列挙中にトランスポートのタスクから走るため。
 - **記憶域は固定長。** `ESPMIDI_MAX_ENDPOINTS`(既定 8)/ `ESPMIDI_MAX_PORTS`(既定 32)/ `ESPMIDI_MAX_PORT_GROUPS`(既定 8)で調整でき、UART 2 本を繋ぐスケッチが USB 機器 16 台分を払わない。
 
-### Phase 3: ルーティングと駆動
+### Phase 3: ルーティングと駆動(完了)
 
-- `Route` と、端点にポートまたはポート群を許す `addRoute()`
-- 3 段パイプラインの骨格(入力ポート前処理 → ルート → 出力ポート後処理)
-- ルートの登録順による決定的な処理
-- キューとコピー、`update()` による排出、あふれ時の破棄とカウンタ
-- SysEx 規則 1(経路は開始時確定)
-- SysEx 規則 2(切断時は `0xF7` で閉じて破棄)
-- SysEx 規則 3(出力ポートの SysEx 排他。System Real-Time のみ割り込み可)
-- ループ防止。同一エンドポイント既定禁止とルート単位の解除、ルート追加時の静的循環検査
-- 診断カウンタ(破棄数 / 送信失敗 / 混雑)
+- ✅ `Route` と、端点にポートまたはポート群を許す `addRoute()`
+- ✅ 3 段パイプライン(入力ポート前処理 → ルート → 出力ポート後処理)。各段にユーザーコードのコールバックを置ける
+- ✅ ルートの登録順による決定的な処理。ルート間は独立
+- ✅ キューとコピー、`update()` による排出、あふれ時の破棄とカウンタ
+- ✅ SysEx 規則 1(経路は開始時確定)
+- ✅ SysEx 規則 2(切断時は `0xF7` で閉じて破棄)
+- ✅ SysEx 規則 3(出力ポートの SysEx 排他。System Real-Time のみ割り込み可)
+- ✅ ループ防止。同一エンドポイント既定禁止とルート単位の解除
+- ✅ 診断カウンタ 8 種
+- ✅ **アプリケーションポート**(決定 6)
+
+実装で確定した細部:
+
+- **静的循環検査は作らなかった。** ルーティングは In → Out の一方向で内部に Out → In の辺が無く、検査対象が存在しないため([DECISIONS.ja.md](DECISIONS.ja.md) の決定 4)。
+- **SysEx 送信中に送れない通常メッセージは捨ててカウント**(当初の「待たせる」から変更)。待たせるには出力ごとの遅延バッファが要る。
+- **チャンクは段のコールバックを通らない。** 規則 1 との衝突を避けるため。
+- **キューのエントリを超えるチャンクは分割する。** `chunkStart` / `chunkEnd` は最初と最後の断片だけが持つので 1 本のストリームのまま。
+- **`update()` が処理するのは呼び出し時点の分だけ。** 段から注入されたメッセージは次の `update()` に回るので、アプリのフィードバックが 1 回の `update()` を無限に回さない。
+- **記憶域は固定長。** `ESPMIDI_MAX_ROUTES`(既定 16)/ `ESPMIDI_QUEUE_ENTRIES`(既定 32)/ `ESPMIDI_CHUNK_BYTES`(既定 48)。キューは約 2KB。
 
 ### Phase 4: フィルタと変換
 
