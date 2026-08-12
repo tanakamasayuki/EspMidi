@@ -4,13 +4,14 @@
 
 ## 現在地
 
-**Phase 1 完了。** 共通表現とワイヤ形式のコーデックが揃い、すべてホスト上のテストで固定されています。
+**Phase 2 完了。** 共通表現、ワイヤ形式のコーデック、ポートモデルが揃い、すべてホスト上のテストで固定されています。
 
 - `src/EspMidiMessage.h` — `Message` / `PortId` / `Timestamp` / `MessageType`、ステータス分類とデータ長表、短いメッセージの構築と直列化
 - `src/EspMidiParser.h` — MIDI 1.0 バイトストリーム → `Message`(UART 用)
 - `src/EspMidiUsbPacket.h` — USB MIDI イベントパケット ⇄ `Message`(USB Host / Device 共用)
+- `src/EspMidiPort.h` — `PortRegistry`。Endpoint / InPort / OutPort、席モデル、状態、メタデータ、ポート群、通知
 
-まだポートもルーティングもありません。次は Phase 2(ポートモデル)です。
+まだルーティングがありません。次は Phase 3(ルーティングと駆動)です。
 
 ## 実装順
 
@@ -20,7 +21,7 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 | --- | --- | --- | --- |
 | 0 | リポジトリ骨格、docs、テスト環境、CI | `unit/test_repository_structure.py`、`arduino_smoke/` | **完了** |
 | 1 | 共通表現。`Message` / `PortId` / `Timestamp` / `MessageType` と MIDI 1.0 バイトストリームのパーサ(running status、SysEx チャンク)、USB パケットコーデック | `unit/message`、`unit/parser`、`unit/usb_packet` | **完了** |
-| 2 | ポートモデル。Endpoint / Port / 席 / 状態 / メタデータ / ポート群 | `unit/port_model` | 予定 |
+| 2 | ポートモデル。Endpoint / Port / 席 / 状態 / メタデータ / ポート群 | `unit/port_model` | **完了** |
 | 3 | ルーティングと駆動。Route / 3 段パイプライン / キュー / SysEx 3 規則 / 循環検査 | `unit/routing`、`unit/sysex_rules` | 予定 |
 | 4 | フィルタと変換 | `unit/filter`、`unit/transform` | 予定 |
 | 5 | UART ポート | `loopback/uart_midi`(配線ゼロ) | 予定 |
@@ -49,15 +50,24 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 - **USB の SysEx 状態は cable ごとに持つ。** cable は独立したポートで、1 回のバルク転送に複数 cable のパケットが混ざるため。
 - **開始を見ていない SysEx 継続パケットは捨てる。** 途中でリセットした場合に「始まりのないチャンク」を作らないため。
 
-### Phase 2: ポートモデル
+### Phase 2: ポートモデル(完了)
 
-- Endpoint / InPort / OutPort と不透明ハンドル、自動採番
-- 席モデル。切断でハンドルを無効化せず状態だけ変える
-- 識別子による再接続時の席の照合
-- 静的ポートと動的ポートの供給インターフェース(アダプタは「ポートの供給者」)
-- メタデータ(transport 種別 / 名前 / 識別子 / 方向 / 状態)
-- ポート群と、すべての入力 / すべての出力の暗黙の群
-- ポートの追加・削除・状態変化の通知
+- ✅ Endpoint / InPort / OutPort と不透明ハンドル、自動採番
+- ✅ 席モデル。切断でハンドルを無効化せず状態だけ変える
+- ✅ 識別子による再接続時の席の照合
+- ✅ 静的ポートと動的ポートの供給インターフェース(アダプタは「ポートの供給者」)
+- ✅ メタデータ(transport 種別 / 名前 / 識別子 / 方向 / 状態)
+- ✅ ポート群と、すべての入力 / すべての出力の暗黙の群
+- ✅ ポートの追加・状態変化の通知
+
+実装で確定した細部:
+
+- **ポートは削除されない。** 席は機器より長生きするので `PortRemoved` イベントは存在せず、消費側は「席が現れた」と「席の状態が変わった」の 2 つだけを扱う。
+- **`attachEndpoint()` / `attachInPort()` は冪等。** 再接続の処理は接続処理をもう一度走らせるだけで済み、同じ席が返る。
+- **状態はエンドポイント単位で動く。** 出入りするのは接続であって個々の cable ではないので、`detachEndpoint()` が配下の全ポートを切断中にする。
+- **識別できない機器は毎回新しい席。** シリアルを持たない USB 機器で席を推測すると、別の機器に前の機器のルーティングを渡してしまう。
+- **通知は関数ポインタ + コンテキスト。** キャプチャ付き `std::function` はヒープを使い、この通知は機器の列挙中にトランスポートのタスクから走るため。
+- **記憶域は固定長。** `ESPMIDI_MAX_ENDPOINTS`(既定 8)/ `ESPMIDI_MAX_PORTS`(既定 32)/ `ESPMIDI_MAX_PORT_GROUPS`(既定 8)で調整でき、UART 2 本を繋ぐスケッチが USB 機器 16 台分を払わない。
 
 ### Phase 3: ルーティングと駆動
 
@@ -138,4 +148,4 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 
 1. フィルタと変換の具体的な API 形状(Phase 4 で確定)
 2. キューの深さと SysEx 一時バッファのサイズの既定値(Phase 3 で確定)
-3. 暗黙のポート群をハンドルとして露出するか(Phase 2 で確定)
+3. ~~暗黙のポート群をハンドルとして露出するか~~ → **予約ハンドルとして露出する**(`InGroup::all()` / `OutGroup::all()`)。Phase 2 で確定
