@@ -63,8 +63,9 @@ BLE のテストは、前回実行のペアリング状態が結果を変えな�
 
 - `uart_midi`: 既存配線をクロスとして使い、UART ポートの双方向を確認する(Phase 5)。ノート / CC / SysEx を両向きに通します。1 台で済む往復は [`../loopback/uart_midi/`](../loopback/uart_midi/) にあり、こちらが足すのは **2 つ目のクロック**です(各ボードが、自分が作っていない信号のビットタイミングを解いています)。
 - `usb_midi`: USB Device ポートの境界(Phase 6)。**cable 数そのものを `getMidiPortInfo()` で assert**してから、cable を跨いだ往復と SysEx を確認します。DUT 側は素の `EspUsbHost` です — 両端が同じコードでパケットを組むと、cable ニブルの間違いが打ち消し合うためです。
+- `ble_midi`: BLE ポートの境界(Phase 8)。DUT が Host、peer が Device で、**無線リンク**・サービスの発見・**タイムスタンプ**(`unit=1` が `Milliseconds13`)・ダンプの往復を確認します。**BLE MIDI はペアリングしない**ので bond は作られません。1 ファイル 1 test function です。
 - `usb_midi_host`: USB Host ポートの境界(Phase 7)。両端が `EspMidi` で、こちらが足すのは**動的な側**です。DUT は機器をどこにも書かず、挿されたときに現れた席を `InGroup::all()` のルートが拾います。2 台が報告するポート数は鏡像になります(host は反転せず device は反転する)。
 
 ## 追加予定
 
-- `ble_midi`: BLE MIDI Device ポートと BLE MIDI Host ポートの境界。タイムスタンプと SysEx 分割を含む(Phase 8)。
+まだありません。同梱ポートの peer テストは揃いました。

@@ -15,8 +15,8 @@
 | UART MIDI | `EspMidiUart.h` | なし(`HardwareSerial`) | 全 ESP32 | **実装済み(実機検証済み)** |
 | USB Device MIDI | `EspMidiEspUsbDevice.h` | `EspUsbDevice` 2.0.2 以降 | S2 / S3 / P4 | **実装済み(実機検証済み)** |
 | USB Host MIDI | `EspMidiEspUsbHost.h` | `EspUsbHost` 2.7.5 以降 | S2 / S3 / P4 | **実装済み(実機検証済み)** |
-| BLE MIDI Device | `EspMidiEspBle.h` | `EspBle` | BLE を持つ SoC | 予定(Phase 8) |
-| BLE MIDI Host | `EspMidiEspBle.h` | `EspBle` | BLE を持つ SoC | 予定(Phase 8) |
+| BLE MIDI Device | `EspMidiEspBle.h` | `EspBle` 1.2.0 以降 | BLE を持つ SoC | **実装済み(実機検証済み)** |
+| BLE MIDI Host | `EspMidiEspBle.h` | `EspBle` 1.2.0 以降 | BLE を持つ SoC | **実装済み(実機検証済み)** |
 
 Phase は [DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md) の実装順です。
 
@@ -148,6 +148,20 @@ port.begin("USB MIDI");                        // 出力 2 / 入力 3
 **GATT サービスの所有。** スケッチが `EspBleMidiDevice` / `EspBleMidiHost` を作って `EspMidi` に渡します。`EspMidi` が自前で MIDI GATT サービスを登録することはないので、`EspBle` の MIDI をスケッチが直接使っていても二重登録は起きません。
 
 **共存。** BLE MIDI は BLE HID や独自 GATT サービスと共存できます。BLE スタック、接続、セキュリティ、Advertising の管理は `EspMidi` の担当外です。
+
+**Device 側の席は静的、Host 側は動的です。** そのため `Transport` も `BleDevice` と `BleHost` に分かれています(USB と同じ理由)。Device 側の席はこのボードのものなので識別子を持たなくても毎回同じ席に戻り、Host 側は BLE アドレスで照合します。
+
+**スキャンと接続はスケッチ、接続の中身はポートです。** ポートが `discover()` を呼ぶので、スケッチは `discover()` を呼びません。席ができるのは**サービスの発見と購読が終わったとき**で、リンクが繋がった時点ではありません。
+
+**ダンプはこのポートだけ再組み立てします。** `EspBle` は `0xF0..0xF7` の完全なメッセージを受け取って自分で分割するので、ルーティングが渡すチャンクをここで繋ぎ直します。**上限は `ESPMIDI_BLE_SYSEX_BYTES`(既定 320、`EspBle` 側の上限と同じ)**で、超えたダンプは切り詰めずに拒否して数えます(`oversizedStreams()`)。中途半端なダンプは送らないほうがましだからです。
+
+**受信は BLE タスクからそのままルータのキューへ入ります。** `Router::receive()` はそのためにスレッドセーフにしてあり([CORE_DESIGN.ja.md](CORE_DESIGN.ja.md))、こうするとダンプがコピーされません(チャンクは NimBLE のバッファを指したまま、キューがコピーする)。BLE タスクと `update()` が共有するのは**接続ごとのポートハンドル 1 語だけ**です。
+
+**MIDI のコールバックは `EspMidi` が取ります。** `EspBleMidiDevice::onMessage()` / `EspBleMidiHost::onMidiMessage()` はどちらもその 1 個だけの primary callback なので、スケッチが BLE MIDI を見たいときは**ルーティング経由で読みます**。接続の通知は additional listener を使うので、スケッチの `onConnected()` は奪いません。
+
+- 記憶域は固定長。`ESPMIDI_MAX_BLE_CONNECTIONS`(既定 4)/ `ESPMIDI_BLE_SYSEX_BYTES`(既定 320)/ `ESPMIDI_BLE_EVENTS`(既定 8)
+- 診断は `oversizedStreams()`、Host 側は加えて `droppedEvents()` / `refusedConnections()`
+
 
 ## 将来候補
 

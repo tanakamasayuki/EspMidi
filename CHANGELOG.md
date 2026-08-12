@@ -27,4 +27,9 @@
 - **席に触るコードを 1 つのタスクに閉じ込めた。** `EspUsbHost` のコールバックでやるのは生パケット 4 バイトをロックフリーのリングに写すことだけで、デコーダも cable の対応もレジストリも `update()` からしか触らない。接続の発見も callback ではなく `getDevices()` の polling にしたのは同じ理由。
 - `peer/usb_midi_host` を追加し、実機で確認した。両端が `EspMidi` で、機器をどこにも書かずに**挿したときに現れた席**を `InGroup::all()` のルートが拾う。素の `EspUsbHost` を観測役にした `peer/usb_midi` は、device 側が独立した相手に対して証明されている状態を保つために残した。
 - `examples/UsbHostToUart` を追加した(UC1)。USB MIDI キーボードで MIDI DIN の音源を鳴らしながら、同じ演奏を PC にも流す。
+- **BLE MIDI ポートを実装した**(Phase 8)。`espmidi::BleDevicePort`(このボードが MIDI 機器)と `espmidi::BleHostPort`(このボードが BLE MIDI キーボードに繋ぐ)。**タイムスタンプを持つ唯一のポート**で、13 bit ミリ秒を `TimestampUnit::Milliseconds13` として素通しする。これで**同梱ポートが全部揃った。**
+- **`Transport::Ble` を `BleDevice` と `BleHost` に分けた。** USB と同じ理由で、Device 側の席は静的、Host 側は動的だから。分ける前は Device 側の識別子が「識別できない」と判定され、購読するたびに新しい席ができていた。
+- **ダンプの再組み立ては BLE ポートだけが持つ。** `EspBle` は `0xF0..0xF7` の完全なメッセージを受け取って自分で分割するので、ルーティングが渡すチャンクをここで繋ぎ直す。上限を超えたダンプは切り詰めずに拒否して数える(`oversizedStreams()`)。
+- **BLE の受信は BLE タスクからそのままキューへ入れる。** Phase 7 で `receive()` を本当にスレッドセーフにしたので、パケットを写し取るリングを挟まなくてよくなり、**ダンプがコピーされない**。
+- `peer/ble_midi` を追加し、実機で確認した(無線・ペアリングなし)。`examples/BleMidiToUart` を追加した(UC5)。
 - 基盤ライブラリへの変更依頼 2 件を提案した(`docs/LIBRARY_REQUESTS.ja.md`)。**両方の cable 数対応が実装された**ので、実装結果(API の形、提案の誤りの訂正、実装時に判明した注意点)を `docs/PORTS.ja.md` と `tests/TEST_PLAN.ja.md` へ反映した。cable 名は両側とも見送り。

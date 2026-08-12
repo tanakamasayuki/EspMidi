@@ -4,7 +4,7 @@
 
 ## 現在地
 
-**Phase 7 完了。** core に加えて UART / USB Device / USB Host のポートが動きます。**すべて実機で検証済みです。**
+**Phase 8 完了。** core と**同梱ポートの全部**が動きます。**すべて実機で検証済みです。**
 
 - `src/EspMidiMessage.h` — `Message` / `PortId` / `Timestamp` / `MessageType`、ステータス分類とデータ長表、短いメッセージの構築と直列化
 - `src/EspMidiParser.h` — MIDI 1.0 バイトストリーム ⇄ `Message`。`Parser` が受信、`Serializer` が送信
@@ -15,10 +15,11 @@
 - `src/EspMidiUart.h` — `UartPort`。31250 baud の `HardwareSerial` に乗る最初のポート
 - `src/EspMidiEspUsbDevice.h` — `UsbDevicePort`。`EspUsbDevice` の cable 数だけポートを供給する
 - `src/EspMidiEspUsbHost.h` — `UsbHostPort`。接続された機器ごとに席を動的に供給する
+- `src/EspMidiEspBle.h` — `BleDevicePort` / `BleHostPort`。タイムスタンプを持つ唯一のポート
 
-**core は完成しています。** ハードウェアに依存する部分は 1 行もなく、すべてホスト上のテストで固定されています。残るのは BLE ポート(Phase 8)と Control Mapping ヘルパー(Phase 9)です。
+**core と同梱ポートは完成しています。** 残るのは Control Mapping ヘルパー(Phase 9)だけです。
 
-実機で確認したのは次のとおりです。`loopback/uart_midi`(1 台・**配線ゼロ**)、`peer/uart_midi`(2 台・既存配線をクロス)、`peer/usb_midi`(素の `EspUsbHost` が観測役。**cable 数を descriptor から読んで assert**)、`peer/usb_midi_host`(両端が `EspMidi`。**動的な席の出現**)。
+実機で確認したのは次のとおりです。`loopback/uart_midi`(1 台・**配線ゼロ**)、`peer/uart_midi`(2 台・既存配線をクロス)、`peer/usb_midi`(素の `EspUsbHost` が観測役。**cable 数を descriptor から読んで assert**)、`peer/usb_midi_host`(両端が `EspMidi`。**動的な席の出現**)、`peer/ble_midi`(無線・**タイムスタンプ**とダンプの往復)。
 
 兄弟ライブラリの依存は**公開バージョン**です(`EspUsbHost` 2.7.5 / `EspUsbDevice` 2.0.2)。依頼 1・2 の cable 対応はどちらもリリース済みなので、`*_local` プロファイルは開発版を試すときだけ使います。
 
@@ -36,7 +37,7 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 | 5 | UART ポート | `unit/serializer`、`unit/uart_port`、`loopback/uart_midi`(配線ゼロ)、`peer/uart_midi` | **完了(実機検証済み)** |
 | 6 | USB Device ポート | `unit/usb_device_port`、`peer/usb_midi` | **完了(実機検証済み)** |
 | 7 | USB Host ポート | `unit/usb_host_port`、`unit/concurrent_receive`、`peer/usb_midi_host` | **完了(実機検証済み)** |
-| 8 | BLE ポート(Device / Host) | `peer/ble_midi` | 予定 |
+| 8 | BLE ポート(Device / Host) | `unit/ble_port`、`peer/ble_midi` | **完了(実機検証済み)** |
 | 9 | Control Mapping ヘルパー | `unit/control_mapping`、`manual/` | 予定 |
 
 基盤ライブラリへの変更依頼は Phase 0 の時点で提案済みです([LIBRARY_REQUESTS.ja.md](LIBRARY_REQUESTS.ja.md))。Phase 1〜5 は依頼と無関係に進むので、対応を待つ時間は発生しません。
@@ -175,12 +176,23 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 - **切断が SysEx の途中なら、規則 2 が下流のストリームを閉じる。** これは実装ではなく既存のルーティング規則がそのまま効く場面で、テストで固定した。
 - **リングは 2 段目のキューになる。** ポートのリング(既定 64)とルータのキュー(既定 32)の 2 つがあり、溢れはそれぞれ `droppedPackets()` と `queueFull` に出る。どちらで落ちたかで「読むのが遅い」と「流すのが遅い」を区別できる。
 
-### Phase 8: BLE ポート
+### Phase 8: BLE ポート(完了・実機検証済み)
 
-- `EspMidiEspBle.h`。`EspBleMidiDevice` / `EspBleMidiHost` に乗る
-- `EspBleMidiMessage` → `espmidi::Message` の変換。タイムスタンプは `Milliseconds13`
-- Host 側の動的エンドポイント供給。BLE アドレスによる席の照合
-- `peer/ble_midi`
+- ✅ `EspMidiEspBle.h`。`EspBleMidiDevice` / `EspBleMidiHost` に乗る
+- ✅ `EspBleMidiMessage` → `espmidi::Message` の変換。タイムスタンプは `Milliseconds13`
+- ✅ Host 側の動的エンドポイント供給。BLE アドレスによる席の照合
+- ✅ `peer/ble_midi`、`examples/BleMidiToUart`
+
+実装で確定した細部:
+
+- **`Transport::Ble` を `BleDevice` と `BleHost` に分けた。** USB と同じ理由で、**Device 側の席は静的、Host 側は動的**だから。分ける前は Device 側の識別子が「識別できない」と判定され、購読するたびに新しい席ができていた。**`unit/ble_port` の最初の実行がそれを捕まえた。**
+- **ダンプの再組み立てはこのポートだけが持つ。** `EspBle` は `0xF0..0xF7` の完全なメッセージを受け取って自分で分割するので、チャンクをここで繋ぎ直す。上限は `ESPMIDI_BLE_SYSEX_BYTES`(既定 320 = `EspBle` 側の上限)で、**超えたダンプは切り詰めずに拒否して数える**。中途半端なダンプは送らないほうがまし。
+- **受信は BLE タスクからそのままキューへ入れる。** Phase 7 で `receive()` を本当にスレッドセーフにしたので、パケットを写し取るリングを挟まなくてよくなった。おかげで**ダンプがコピーされない**(チャンクは NimBLE のバッファを指したまま)。共有するのは接続ごとのポートハンドル 1 語だけ。
+- **接続の通知だけはリング越し。** BLE には USB の `getDevices()` にあたる列挙がないので接続は listener で来る。中身は接続 ID だけなので小さい。
+- **接続 ID 0 は実在する。** 公開用のスロットを 0 で初期化すると空きスロットが「接続 0」に見えるので、`0xffff` で初期化する。
+- **`discover()` はポートが呼ぶ。** スキャンと接続はスケッチ、接続の中身はポート。席ができるのは**サービスの発見と購読が終わったとき**で、リンクが繋がった時点ではない。
+- **MIDI のコールバックは `EspMidi` が取る。** `EspBle` 側はどちらも 1 個だけの primary callback なので、スケッチは**ルーティング経由で読む**。接続の通知は additional listener なのでスケッチの `onConnected()` は奪わない。
+- **`EspBle` の名前が Device と Host で違う**(`onMessage()` / `onMidiMessage()`)。呼び分けている。
 
 ### Phase 9: Control Mapping ヘルパー
 
@@ -204,7 +216,7 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 | ~~USB Host の演奏を UART の音源へ~~ → `UsbHostToUart` に含む | 5, 7 |
 | ~~USB Host の演奏を PC と外部音源へ同時に(UC1)~~ → `UsbHostToUart` | 5, 6, 7 |
 | 複数機器を集約して PC の複数ポートに(UC2) | 6, 7 |
-| BLE MIDI キーボードを UART 音源へ中継(UC5) | 5, 8 |
+| ~~BLE MIDI キーボードを UART 音源へ中継(UC5)~~ → `BleMidiToUart` | 5, 8 |
 | MIDI と HID の同居(UC6) | 6 |
 | チャンネルの振り分けとトランスポーズ(UC7) | 4, 5, 7 |
 | GPIO のつまみを Control Change に(UC10) | 9 |

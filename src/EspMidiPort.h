@@ -62,7 +62,11 @@ enum class Transport : uint8_t
   Uart,
   UsbDevice, // this board seen as a MIDI device
   UsbHost,   // a device plugged into this board
-  Ble,
+  // Split for the same reason USB is: this board's own BLE MIDI service is fixed
+  // by the board, while a device it connects to is discovered and identified by
+  // its address.
+  BleDevice,
+  BleHost,
   // A port the sketch itself drives: it injects messages and receives them.
   // Control mapping helpers (buttons, encoders) and monitors are built on it,
   // and it participates in routing exactly like a transport-backed port.
@@ -168,7 +172,7 @@ struct EndpointIdentity
   bool isStatic() const
   {
     return transport == Transport::Uart || transport == Transport::UsbDevice ||
-           transport == Transport::Application;
+           transport == Transport::BleDevice || transport == Transport::Application;
   }
 
   // Whether this identity can be recognised again after a disconnect. A USB
