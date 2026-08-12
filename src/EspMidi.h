@@ -37,6 +37,9 @@
 // Endpoints, ports, seats and port groups: what routing addresses.
 #include "EspMidiPort.h"
 
+// Declarative filtering and transformation, the rules a stage carries.
+#include "EspMidiFilter.h"
+
 // Routes, the pipeline that carries messages between ports, and the application
 // port a sketch uses to watch or inject.
 #include "EspMidiRouter.h"
@@ -47,7 +50,7 @@
 #include "EspMidiParser.h"    // MIDI 1.0 byte stream (UART)
 #include "EspMidiUsbPacket.h" // USB MIDI 1.0 event packets (USB Host and Device)
 
-// Still to come, in the order given by docs/DEVELOPMENT_PLAN.ja.md: declarative
-// filtering and transformation, and the control mapping helpers.
+// Still to come, in the order given by docs/DEVELOPMENT_PLAN.ja.md: the ports
+// that connect to real transports, and the control mapping helpers.
 
 #endif // ESPMIDI_H

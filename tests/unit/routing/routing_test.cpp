@@ -220,9 +220,9 @@ void test_three_pipeline_stages()
 
   int inCalls = 0;
   int outCalls = 0;
-  f.router.setInPortTransform(f.inA, &countCalls, &inCalls);
-  f.router.setRouteTransform(route, &transposeUp);
-  f.router.setOutPortTransform(f.outB, &countCalls, &outCalls);
+  f.router.setInPortCallback(f.inA, &countCalls, &inCalls);
+  f.router.setRouteCallback(route, &transposeUp);
+  f.router.setOutPortCallback(f.outB, &countCalls, &outCalls);
 
   f.receive(f.inA, 0x90, 60, 100);
   f.router.update();
@@ -233,14 +233,14 @@ void test_three_pipeline_stages()
   assert(f.sinkB.data1[0] == 72); // the route's transform ran
 
   // A stage may only be set on a port of the matching direction.
-  assert(!f.router.setInPortTransform(espmidi::InPort{f.outB.port}, &countCalls, &inCalls));
+  assert(!f.router.setInPortCallback(espmidi::InPort{f.outB.port}, &countCalls, &inCalls));
 }
 
 void test_a_stage_can_drop()
 {
   Fixture f;
   const espmidi::Route route = f.router.addRoute(f.inA, f.outB);
-  f.router.setRouteTransform(route, &dropAll);
+  f.router.setRouteCallback(route, &dropAll);
 
   f.receive(f.inA, 0x90, 60, 100);
   f.router.update();
@@ -254,7 +254,7 @@ void test_route_transforms_do_not_leak_between_routes()
   // change what another route delivers.
   Fixture f;
   const espmidi::Route toB = f.router.addRoute(f.inA, f.outB);
-  f.router.setRouteTransform(toB, &transposeUp);
+  f.router.setRouteCallback(toB, &transposeUp);
 
   const espmidi::EndpointId c = f.registry.attachEndpoint(uart(3), "UART3");
   const espmidi::OutPort outC = f.registry.attachOutPort(c, 0);
@@ -280,7 +280,7 @@ void test_routes_run_in_registration_order()
 
   const espmidi::Route first = f.router.addRoute(f.inA, f.outB);
   f.router.addRoute(f.inA, outC);
-  f.router.setRouteTransform(first, &transposeUp);
+  f.router.setRouteCallback(first, &transposeUp);
 
   f.receive(f.inA, 0x90, 60, 100);
   f.router.update();

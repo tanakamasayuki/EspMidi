@@ -35,13 +35,48 @@ midi.addRoute(inPort, synths);   // 端点にポート群も指定できる
 
 3 段すべてにフィルタと変換を置けます。ルート単位だけに限ると「この機器は ch1 だけ」を全ルートへ書く羽目になり、ポート群への共通の後処理も書けません。
 
-各段には**宣言的な規則**(Phase 4)と**ユーザーコードのコールバック**の両方を置けます。コールバックはメッセージをその場で書き換えるか、`Verdict::Drop` で落とします。
+各段は**3 種類の規則**を持てます。適用順は常に次のとおりです。
 
-```cpp
-route.onTransform(...);   // 見る / 書き換える / 落とす(1 → 1)
+```text
+フィルタ(宣言的) → 変換(宣言的) → コールバック(ユーザーコード)
 ```
 
+- **フィルタ**は絞るだけ。種別、チャンネル、ノート範囲、Control Change 番号で通過を決めます。
+- **変換**は書き換えるだけ。チャンネル、トランスポーズ、Velocity、Control Change 番号と値、プレッシャー。
+- **コールバック**は両方できます。その場で書き換えるか `Verdict::Drop` で落とします。
+
+何も設定しなければ段は素通しです。
+
+```cpp
+espmidi::Filter onlyVolume;
+onlyVolume.kinds = espmidi::KindControlChange;
+onlyVolume.ccMin = onlyVolume.ccMax = 7;
+router.setRouteFilter(route, onlyVolume);
+
+espmidi::Transform toExpression;
+toExpression.controller = 11;                              // CC7 → CC11
+toExpression.velocity = espmidi::ValueMap::scale7(0, 63);  // 音量を半分に
+router.setRouteTransform(route, toExpression);
+
+router.setRouteCallback(route, myCode, this);              // 任意コード
+```
+
+**「CC7 を CC11 にする」は、CC7 に絞ったフィルタと番号を設定する変換の組み合わせ**です。変換側に対応表を持たないのはこのためで、複数の付け替えは複数のルートになります。
+
 1 つのメッセージから別種のメッセージを出したい場合や、1 → N にしたい場合はコールバックからアプリケーションポートへ書きます(後述)。
+
+### 値の解像度
+
+Velocity と Control Change 値は MIDI 1.0 では 7 bit、MIDI 2.0 では 16 / 32 bit です。**`ValueMap` は端点を正規化して保持する**ので、いま書いた規則は幅が広がっても同じ意味を保ちます([DECISIONS.ja.md](DECISIONS.ja.md) の決定 1)。
+
+```cpp
+espmidi::ValueMap::scale7(0, 63);          // 入力全域を下半分へ(音量制限)
+espmidi::ValueMap::range7(32, 96, 0, 127); // 32〜96 を全域へ(範囲外はクランプ)
+espmidi::ValueMap::fixed7(100);            // 常に一定(タッチ非対応のパッド)
+espmidi::ValueMap::range7(0, 127, 127, 0); // 反転(逆配線のペダル)
+```
+
+ノート番号、チャンネル、Control Change 番号は MIDI 2.0 でも同じ幅なので、ただの整数です。
 
 ### 適用の順序
 
@@ -158,7 +193,9 @@ Control Mapping ヘルパー([REQUIREMENTS.ja.md](REQUIREMENTS.ja.md))はこの�
 
 ## チャンクの扱い
 
-**チャンクは段のコールバックを通りません。** データストリームの中身を解釈するのは EspMidi の役目ではなく、途中で経路の判定を変えることは規則 1 と衝突します。SysEx を加工したい場合はアプリケーションポートで受けて自前で処理します。
+**チャンクが通るのはフィルタだけで、しかも最初のチャンクだけです。** 規則 1 が「経路は開始時に確定する」と定めている以上、途中で判定を変えることはあってはなりません。変換とコールバックはチャンクを一切見ません — データストリームの中身を解釈するのは EspMidi の役目ではないからです。SysEx を加工したい場合はアプリケーションポートで受けて自前で処理します。
+
+フィルタが最初のチャンクを弾いた場合、その出力は**ストリームを掴みません**。掴んでしまうと、送っていないストリームで出力が塞がったままになります。
 
 **チャンクはキューの容量に応じて分割されます。** 1 エントリが運べるペイロードは `ESPMIDI_CHUNK_BYTES`(既定 48)なので、これを超えるチャンクは複数エントリに分かれます。**`chunkStart` は最初の断片だけ、`chunkEnd` は最後の断片だけ**が持つので、下流から見れば 1 本のストリームのままです。チャンクの境界そのものは意味を持たないため、この分割は安全です(結合はしません)。
 
@@ -172,7 +209,8 @@ Control Mapping ヘルパー([REQUIREMENTS.ja.md](REQUIREMENTS.ja.md))はこの�
 | `queueFull` | キューが満杯で捨てた |
 | `delivered` | 送信に成功した |
 | `sendFailed` | ポートが送信を拒否した(切断中など) |
-| `droppedByStage` | 段のコールバックが `Drop` を返した |
+| `droppedByFilter` | 宣言的なフィルタが弾いた |
+| `droppedByStage` | 変換が表現できなかった、またはコールバックが `Drop` を返した |
 | `sysExRejected` | 送信中の出力へ 2 本目のストリームが来た(規則 3) |
 | `blockedBySysEx` | ストリーム送信中で送れなかった(規則 3) |
 | `noRoute` | 宛先が 1 つも無かった |

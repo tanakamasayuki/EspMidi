@@ -22,6 +22,7 @@
 #ifndef ESPMIDI_ROUTER_H
 #define ESPMIDI_ROUTER_H
 
+#include "EspMidiFilter.h"
 #include "EspMidiMessage.h"
 #include "EspMidiPort.h"
 
@@ -85,7 +86,8 @@ struct RouterCounters
   uint32_t queueFull = 0;         // dropped: the queue had no room
   uint32_t delivered = 0;         // written to a sink successfully
   uint32_t sendFailed = 0;        // a sink refused it
-  uint32_t droppedByStage = 0;    // a transform returned Drop
+  uint32_t droppedByFilter = 0;   // a declarative filter rejected it
+  uint32_t droppedByStage = 0;    // a transform could not represent it, or a callback said Drop
   uint32_t sysExRejected = 0;     // a second stream to a busy output
   uint32_t blockedBySysEx = 0;    // could not be sent during a stream
   uint32_t noRoute = 0;           // nothing was listening
@@ -147,14 +149,40 @@ public:
     return true;
   }
 
-  bool setRouteTransform(Route route, TransformCallback callback, void *context = nullptr)
+  // Each stage takes up to three rules, applied in this order:
+  //   filter (declarative)  ->  transform (declarative)  ->  callback (user code)
+  // A filter only narrows, a transform only rewrites, and a callback can do
+  // both. Setting none of them leaves the stage transparent.
+  bool setRouteFilter(Route route, const Filter &filter)
   {
     if (!validRoute(route))
     {
       return false;
     }
-    routes_[route.value].transform = callback;
-    routes_[route.value].transformContext = context;
+    routes_[route.value].rules.hasFilter = true;
+    routes_[route.value].rules.filter = filter;
+    return true;
+  }
+
+  bool setRouteTransform(Route route, const Transform &transform)
+  {
+    if (!validRoute(route))
+    {
+      return false;
+    }
+    routes_[route.value].rules.hasTransform = true;
+    routes_[route.value].rules.transform = transform;
+    return true;
+  }
+
+  bool setRouteCallback(Route route, TransformCallback callback, void *context = nullptr)
+  {
+    if (!validRoute(route))
+    {
+      return false;
+    }
+    routes_[route.value].rules.callback = callback;
+    routes_[route.value].rules.context = context;
     return true;
   }
 
@@ -173,14 +201,18 @@ public:
 
   // --- Per-port stages ----------------------------------------------------
 
-  bool setInPortTransform(InPort port, TransformCallback callback, void *context = nullptr)
+  bool setInPortFilter(InPort port, const Filter &filter) { return stageFilter(port.port, Direction::In, filter); }
+  bool setInPortTransform(InPort port, const Transform &transform) { return stageTransform(port.port, Direction::In, transform); }
+  bool setInPortCallback(InPort port, TransformCallback callback, void *context = nullptr)
   {
-    return setStage(port.port, Direction::In, callback, context);
+    return stageCallback(port.port, Direction::In, callback, context);
   }
 
-  bool setOutPortTransform(OutPort port, TransformCallback callback, void *context = nullptr)
+  bool setOutPortFilter(OutPort port, const Filter &filter) { return stageFilter(port.port, Direction::Out, filter); }
+  bool setOutPortTransform(OutPort port, const Transform &transform) { return stageTransform(port.port, Direction::Out, transform); }
+  bool setOutPortCallback(OutPort port, TransformCallback callback, void *context = nullptr)
   {
-    return setStage(port.port, Direction::Out, callback, context);
+    return stageCallback(port.port, Direction::Out, callback, context);
   }
 
   // --- Port adapter interface ---------------------------------------------
@@ -268,6 +300,18 @@ public:
   }
 
 private:
+  // The rules one stage of the pipeline carries. Routes and ports use the same
+  // structure so a rule behaves identically wherever it is placed.
+  struct StageRules
+  {
+    bool hasFilter = false;
+    Filter filter;
+    bool hasTransform = false;
+    Transform transform;
+    TransformCallback callback = nullptr;
+    void *context = nullptr;
+  };
+
   struct RouteSlot
   {
     bool used = false;
@@ -277,14 +321,7 @@ private:
     bool allowSameEndpoint = false;
     uint16_t source = 0; // PortId value, or InGroup value when sourceIsGroup
     uint16_t dest = 0;   // PortId value, or OutGroup value when destIsGroup
-    TransformCallback transform = nullptr;
-    void *transformContext = nullptr;
-  };
-
-  struct StageSlot
-  {
-    TransformCallback callback = nullptr;
-    void *context = nullptr;
+    StageRules rules;
   };
 
   struct SinkSlot
@@ -380,14 +417,77 @@ private:
     return Route{static_cast<uint16_t>(index)};
   }
 
-  bool setStage(PortId port, Direction direction, TransformCallback callback, void *context)
+  StageRules *stageFor(PortId port, Direction direction)
   {
     if (!port.valid() || port.value >= MaxPorts || registry_.portDirection(port) != direction)
     {
+      return nullptr;
+    }
+    return &stages_[port.value];
+  }
+
+  bool stageFilter(PortId port, Direction direction, const Filter &filter)
+  {
+    StageRules *rules = stageFor(port, direction);
+    if (!rules)
+    {
       return false;
     }
-    stages_[port.value].callback = callback;
-    stages_[port.value].context = context;
+    rules->hasFilter = true;
+    rules->filter = filter;
+    return true;
+  }
+
+  bool stageTransform(PortId port, Direction direction, const Transform &transform)
+  {
+    StageRules *rules = stageFor(port, direction);
+    if (!rules)
+    {
+      return false;
+    }
+    rules->hasTransform = true;
+    rules->transform = transform;
+    return true;
+  }
+
+  bool stageCallback(PortId port, Direction direction, TransformCallback callback, void *context)
+  {
+    StageRules *rules = stageFor(port, direction);
+    if (!rules)
+    {
+      return false;
+    }
+    rules->callback = callback;
+    rules->context = context;
+    return true;
+  }
+
+  // Runs one stage. The filter is the only rule a data stream meets, and only at
+  // its start: rule 1 fixes a stream's path when it begins, so re-deciding it
+  // partway through is exactly what must not happen. Transforms and callbacks
+  // never see a chunk at all.
+  bool runStage(const StageRules &rules, Message &message)
+  {
+    const bool continuation = message.chunk && !message.chunkStart;
+    if (!continuation && rules.hasFilter && !rules.filter.accepts(message))
+    {
+      counters_.droppedByFilter++;
+      return false;
+    }
+    if (message.chunk)
+    {
+      return true;
+    }
+    if (rules.hasTransform && !rules.transform.apply(message))
+    {
+      counters_.droppedByStage++;
+      return false;
+    }
+    if (rules.callback && rules.callback(rules.context, message) == Verdict::Drop)
+    {
+      counters_.droppedByStage++;
+      return false;
+    }
     return true;
   }
 
@@ -449,14 +549,10 @@ private:
       return;
     }
 
-    // Stage 1: the input port's own processing. Chunks bypass every stage.
-    if (!message.chunk && stages_[source].callback)
+    // Stage 1: the input port's own rules.
+    if (!runStage(stages_[source], message))
     {
-      if (stages_[source].callback(stages_[source].context, message) == Verdict::Drop)
-      {
-        counters_.droppedByStage++;
-        return;
-      }
+      return;
     }
 
     // Rule 1: a stream's path is decided when it starts. Continuations replay
@@ -497,13 +593,9 @@ private:
       }
 
       Message routed = message;
-      if (!routed.chunk && route.transform)
+      if (!runStage(route.rules, routed))
       {
-        if (route.transform(route.transformContext, routed) == Verdict::Drop)
-        {
-          counters_.droppedByStage++;
-          continue;
-        }
+        continue;
       }
 
       for (uint16_t out = 0; out < registry_.portCount() && out < MaxPorts; out++)
@@ -565,6 +657,14 @@ private:
   {
     const uint16_t out = outPort.value;
 
+    // Stage 3: the output port's own rules. Run before the exclusivity check so
+    // a rejected stream never claims the output — it would then stay busy with a
+    // stream that is not being sent.
+    if (!runStage(stages_[out], message))
+    {
+      return false;
+    }
+
     if (message.chunk)
     {
       if (message.chunkStart)
@@ -591,16 +691,6 @@ private:
       // stalled dump silently reorder everything behind it.
       counters_.blockedBySysEx++;
       return false;
-    }
-
-    // Stage 3: the output port's own processing.
-    if (!message.chunk && stages_[out].callback)
-    {
-      if (stages_[out].callback(stages_[out].context, message) == Verdict::Drop)
-      {
-        counters_.droppedByStage++;
-        return false;
-      }
     }
 
     bool sent = false;
@@ -690,7 +780,7 @@ private:
 
   PortRegistry &registry_;
   RouteSlot routes_[MaxRoutes];
-  StageSlot stages_[MaxPorts];
+  StageRules stages_[MaxPorts];
   SinkSlot sinks_[MaxPorts];
   StreamState streams_[MaxPorts];
   PortId outStreamOwner_[MaxPorts];

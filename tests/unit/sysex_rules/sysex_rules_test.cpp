@@ -194,7 +194,7 @@ void test_chunks_bypass_transforms()
   Fixture f;
   const espmidi::Route route = f.router.addRoute(f.inA, f.outB);
   int calls = 0;
-  f.router.setRouteTransform(route, &dropAll, &calls);
+  f.router.setRouteCallback(route, &dropAll, &calls);
 
   const uint8_t payload[] = {0x41};
   f.chunk(f.inA, payload, sizeof(payload), true, true);

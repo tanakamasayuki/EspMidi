@@ -4,15 +4,16 @@
 
 ## 現在地
 
-**Phase 3 完了。** 共通表現、ワイヤ形式のコーデック、ポートモデル、ルーティングが揃い、すべてホスト上のテストで固定されています。
+**Phase 4 完了。** 共通表現、ワイヤ形式のコーデック、ポートモデル、ルーティング、フィルタと変換が揃い、すべてホスト上のテストで固定されています。
 
 - `src/EspMidiMessage.h` — `Message` / `PortId` / `Timestamp` / `MessageType`、ステータス分類とデータ長表、短いメッセージの構築と直列化
 - `src/EspMidiParser.h` — MIDI 1.0 バイトストリーム → `Message`(UART 用)
 - `src/EspMidiUsbPacket.h` — USB MIDI イベントパケット ⇄ `Message`(USB Host / Device 共用)
 - `src/EspMidiPort.h` — `PortRegistry`。Endpoint / InPort / OutPort、席モデル、状態、メタデータ、ポート群、通知
 - `src/EspMidiRouter.h` — `Router` と `AppPort`。ルート、3 段パイプライン、キュー駆動、SysEx 3 規則、ループ規則、診断カウンタ
+- `src/EspMidiFilter.h` — `Filter` / `Transform` / `ValueMap`。宣言的な絞り込みと書き換え
 
-**この時点で core は動きます。** ポートを供給してシンクを登録すれば、実機なしでも `AppPort` 同士で end-to-end の転送が回ります。残るのは宣言的なフィルタ / 変換(Phase 4)と、実際のトランスポートに繋ぐポート(Phase 5 以降)です。
+**core は完成しました。** ハードウェアに依存する部分は 1 行もなく、すべてホスト上のテストで固定されています。残るのは実際のトランスポートに繋ぐポート(Phase 5 以降)と Control Mapping ヘルパーだけです。
 
 ## 実装順
 
@@ -24,7 +25,7 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 | 1 | 共通表現。`Message` / `PortId` / `Timestamp` / `MessageType` と MIDI 1.0 バイトストリームのパーサ(running status、SysEx チャンク)、USB パケットコーデック | `unit/message`、`unit/parser`、`unit/usb_packet` | **完了** |
 | 2 | ポートモデル。Endpoint / Port / 席 / 状態 / メタデータ / ポート群 | `unit/port_model` | **完了** |
 | 3 | ルーティングと駆動。Route / 3 段パイプライン / キュー / SysEx 3 規則 / アプリケーションポート | `unit/routing`、`unit/sysex_rules` | **完了** |
-| 4 | フィルタと変換 | `unit/filter`、`unit/transform` | 予定 |
+| 4 | フィルタと変換 | `unit/filter`、`unit/transform` | **完了** |
 | 5 | UART ポート | `loopback/uart_midi`(配線ゼロ) | 予定 |
 | 6 | USB Device ポート | `peer/usb_midi` | 予定([依頼 1](LIBRARY_REQUESTS.ja.md) の cable 数は実装済み) |
 | 7 | USB Host ポート | `peer/usb_midi` | 予定([依頼 2](LIBRARY_REQUESTS.ja.md) の cable 数は実装済み) |
@@ -92,11 +93,21 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 - **`update()` が処理するのは呼び出し時点の分だけ。** 段から注入されたメッセージは次の `update()` に回るので、アプリのフィードバックが 1 回の `update()` を無限に回さない。
 - **記憶域は固定長。** `ESPMIDI_MAX_ROUTES`(既定 16)/ `ESPMIDI_QUEUE_ENTRIES`(既定 32)/ `ESPMIDI_CHUNK_BYTES`(既定 48)。キューは約 2KB。
 
-### Phase 4: フィルタと変換
+### Phase 4: フィルタと変換(完了)
 
-- フィルタ条件(メッセージ種別 / チャンネル / ノート範囲 / Control Change 番号 / 送信元ポート)
-- 変換(チャンネル変更 / ノート番号変更 / トランスポーズ / Velocity 変更 / Control Change 番号変更 / Control Change 値の範囲変換)
-- **値の幅を後から広げられる API 形状の確定**([DECISIONS.ja.md](DECISIONS.ja.md) の仮置き 1)
+- ✅ フィルタ条件(メッセージ種別 / チャンネル / ノート範囲 / Control Change 番号)。送信元ポートはルートの端点そのものなので条件に含めない
+- ✅ 変換(チャンネル設定とオフセット / トランスポーズとノートオフセット / Velocity / Control Change 番号と値 / プレッシャー)
+- ✅ **値の幅を後から広げられる API 形状の確定**([DECISIONS.ja.md](DECISIONS.ja.md) の仮置き 1)
+
+実装で確定した細部:
+
+- **段は 3 種類の規則を持つ**(フィルタ → 変換 → コールバックの順)。ルートにも入力ポートにも出力ポートにも同じ形で置ける。
+- **`ValueMap` は端点を正規化して保持する。** `range7()` / `scale7()` / `fixed7()` は「7 bit 単位で書いた」ことを表すだけで、規則自体は幅を持たない。MIDI 2.0 では `range16()` を足すだけになる。
+- **変換に付け替え表を持たない。** 「CC7 を CC11 へ」はフィルタで絞って変換で番号を設定する組み合わせで書ける。
+- **Velocity 0 のノートオンは触らない。** ワイヤ上はノートオフなので、スケールすると「止まらない小さな音」になる。
+- **チャンネルプレッシャーは値が第 1 バイト**にある。ポリフォニックプレッシャーと同じ `pressure` で扱うが、書き込む位置が違う。
+- **トランスポートで範囲外に出たノートは捨てる。** 折り返すと鍵盤の反対端で鳴る。
+- **フィルタが最初のチャンクを弾いた出力はストリームを掴まない。** 掴むと、送っていないストリームで出力が塞がったままになる。
 
 ### Phase 5: UART ポート
 
