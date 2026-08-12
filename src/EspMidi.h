@@ -50,7 +50,10 @@
 #include "EspMidiParser.h"    // MIDI 1.0 byte stream (UART)
 #include "EspMidiUsbPacket.h" // USB MIDI 1.0 event packets (USB Host and Device)
 
-// Still to come, in the order given by docs/DEVELOPMENT_PLAN.ja.md: the ports
-// that connect to real transports, and the control mapping helpers.
+// Control mapping: buttons, knobs, encoders and clock, as MIDI. Core rather than
+// a port, because none of it touches a pin or reads the time itself — the sketch
+// hands over the reading and the moment, which is what makes it portable and what
+// keeps it working for an input this library has never heard of.
+#include "EspMidiControl.h"
 
 #endif // ESPMIDI_H

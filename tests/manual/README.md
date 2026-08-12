@@ -27,4 +27,3 @@ None yet. See the coverage plan in [../TEST_PLAN.ja.md](../TEST_PLAN.ja.md).
 - `usb_host_real_devices`: connect real USB MIDI keyboards, pads and sound modules, including several at once, through a hub, and composite devices (Phase 7).
 - `ble_midi_pairing`: confirm pairing and reconnection with real BLE MIDI devices, and how it appears from iOS, Android and a PC (Phase 8).
 - `sysex_dump`: transfer a real instrument's patch dump (a long SysEx) and confirm the receiving side loads it correctly (Phase 5 onwards).
-- `control_mapping`: confirm the feel and sampling accuracy of real buttons and encoders (Phase 9).

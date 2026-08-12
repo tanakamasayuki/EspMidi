@@ -12,6 +12,7 @@ They all follow the same three steps: 1) start the stacks, 2) create the ports, 
 - `UsbMidiDevice`: appears to a PC as a two-port USB MIDI interface. Port 1 is the MIDI DIN pair, port 2 is the board itself.
 - `UsbHostToUart`: a USB MIDI keyboard plays a MIDI DIN sound module while the same performance also reaches a PC (UC1).
 - `BleMidiToUart`: a wireless BLE MIDI keyboard plays a MIDI DIN sound module (UC5).
+- `GpioControls`: a MIDI controller of knobs, buttons and an encoder, sending to USB MIDI and MIDI DIN at once (UC10).
 
 More are added from the phase in which each port starts working; see [../docs/DEVELOPMENT_PLAN.ja.md](../docs/DEVELOPMENT_PLAN.ja.md) for the planned list.
 

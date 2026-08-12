@@ -32,4 +32,7 @@
 - **ダンプの再組み立ては BLE ポートだけが持つ。** `EspBle` は `0xF0..0xF7` の完全なメッセージを受け取って自分で分割するので、ルーティングが渡すチャンクをここで繋ぎ直す。上限を超えたダンプは切り詰めずに拒否して数える(`oversizedStreams()`)。
 - **BLE の受信は BLE タスクからそのままキューへ入れる。** Phase 7 で `receive()` を本当にスレッドセーフにしたので、パケットを写し取るリングを挟まなくてよくなり、**ダンプがコピーされない**。
 - `peer/ble_midi` を追加し、実機で確認した(無線・ペアリングなし)。`examples/BleMidiToUart` を追加した(UC5)。
+- **Control Mapping ヘルパーを実装した**(Phase 9)。`espmidi::Button`(デバウンス / ラッチ)、`Analog`(範囲 / 反転 / ヒステリシス / スムージング)、`Encoder`(絶対と相対 3 形式)、`ControlOutput`(受信 → LED などの制御)、`ClockGenerator` / `ClockCounter`(MIDI Clock の生成と計測)。**これで実装計画が完了した。**
+- **ヘルパーは GPIO にも時刻にも触らない。** 読んだ値と今の時刻を引数で受け取るので、ADC でもポートエキスパンダでもタッチセンサでも同じものが使え、**跳ねるスイッチもテンポ変化もホスト上のテストで作れる**。ハードウェアに依存しないので core に置き `EspMidi.h` から include した。
+- `examples/GpioControls`(UC10)と `tests/manual/control_mapping.ja.md` を追加した。人の手にどう感じられるかは assert できないので、そこだけを手順として切り出した。
 - 基盤ライブラリへの変更依頼 2 件を提案した(`docs/LIBRARY_REQUESTS.ja.md`)。**両方の cable 数対応が実装された**ので、実装結果(API の形、提案の誤りの訂正、実装時に判明した注意点)を `docs/PORTS.ja.md` と `tests/TEST_PLAN.ja.md` へ反映した。cable 名は両側とも見送り。

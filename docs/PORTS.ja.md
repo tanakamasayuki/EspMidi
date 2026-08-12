@@ -163,6 +163,12 @@ port.begin("USB MIDI");                        // 出力 2 / 入力 3
 - 診断は `oversizedStreams()`、Host 側は加えて `droppedEvents()` / `refusedConnections()`
 
 
+## Control Mapping はポートではありません
+
+ボタン・つまみ・エンコーダ・クロックのヘルパーは `src/EspMidiControl.h` にあり、**core の一部**です([DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md) の Phase 9)。ピンにも時刻にも触らず、読んだ値と今の時刻を引数で受け取るので、トランスポートライブラリへの依存が発生しません。
+
+出力先はアプリケーションポートなので、**つまみが作った Control Change はここに並んだどのポートへでもルーティングできます**。
+
 ## 将来候補
 
 [REQUIREMENTS.ja.md](REQUIREMENTS.ja.md) の拡張性に挙げたもののうち、ポートとして追加しうるもの。

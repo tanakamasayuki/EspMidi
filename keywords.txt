@@ -53,6 +53,17 @@ BasicBleDevicePort	KEYWORD1
 BleHostPort	KEYWORD1
 BasicBleHostPort	KEYWORD1
 BleSysExBuffer	KEYWORD1
+Button	KEYWORD1
+ButtonConfig	KEYWORD1
+Analog	KEYWORD1
+AnalogConfig	KEYWORD1
+Encoder	KEYWORD1
+EncoderConfig	KEYWORD1
+EncoderMode	KEYWORD1
+ControlOutput	KEYWORD1
+LevelCallback	KEYWORD1
+ClockGenerator	KEYWORD1
+ClockCounter	KEYWORD1
 
 isStatusByte	KEYWORD2
 isDataByte	KEYWORD2
@@ -176,6 +187,28 @@ oversizedStreams	KEYWORD2
 droppedEvents	KEYWORD2
 refusedConnections	KEYWORD2
 messageFromBle	KEYWORD2
+resend	KEYWORD2
+turn	KEYWORD2
+handle	KEYWORD2
+onLevel	KEYWORD2
+level	KEYWORD2
+messageLevel	KEYWORD2
+microsPerClockTick	KEYWORD2
+bpmTimes100FromTick	KEYWORD2
+setTempo	KEYWORD2
+setMicrosPerTick	KEYWORD2
+microsPerTick	KEYWORD2
+bpmTimes100	KEYWORD2
+start	KEYWORD2
+resume	KEYWORD2
+stop	KEYWORD2
+running	KEYWORD2
+tick	KEYWORD2
+quarters	KEYWORD2
+onQuarter	KEYWORD2
+config	KEYWORD2
+raw	KEYWORD2
+value	KEYWORD2
 
 MaxPortsPerEndpoint	LITERAL1
 MaxShortMessageBytes	LITERAL1
@@ -209,3 +242,4 @@ ESPMIDI_USB_HOST_POLL_MS	LITERAL1
 ESPMIDI_MAX_BLE_CONNECTIONS	LITERAL1
 ESPMIDI_BLE_SYSEX_BYTES	LITERAL1
 ESPMIDI_BLE_EVENTS	LITERAL1
+MidiClockTicksPerQuarter	LITERAL1

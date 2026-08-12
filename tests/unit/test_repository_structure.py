@@ -22,6 +22,7 @@ def test_required_project_files_exist():
         "LICENSE",
         "src/EspMidi.h",
         "src/EspMidiEspUsbDevice.h",
+        "src/EspMidiControl.h",
         "src/EspMidiEspBle.h",
         "src/EspMidiEspUsbHost.h",
         "src/EspMidiFilter.h",
@@ -85,6 +86,8 @@ def test_required_project_files_exist():
         "tests/unit/concurrent_receive/test_concurrent_receive.py",
         "tests/unit/ble_port/ble_port_test.cpp",
         "tests/unit/ble_port/test_ble_port.py",
+        "tests/unit/control_mapping/control_mapping_test.cpp",
+        "tests/unit/control_mapping/test_control_mapping.py",
         "tests/arduino_smoke/arduino_smoke.ino",
         "tests/arduino_smoke/sketch.yaml",
         "tests/arduino_smoke/test_arduino_smoke.py",
@@ -116,6 +119,7 @@ def test_required_project_files_exist():
         "tests/peer/ble_midi/peer_device/peer_device.ino",
         "tests/peer/ble_midi/peer_device/sketch.yaml",
         "tests/manual/README.ja.md",
+        "tests/manual/control_mapping.ja.md",
         "tests/manual/README.md",
     ]
 

@@ -4,7 +4,7 @@
 
 ## 現在地
 
-**Phase 8 完了。** core と**同梱ポートの全部**が動きます。**すべて実機で検証済みです。**
+**Phase 9 完了。実装計画は完了しました。** core、同梱ポートの全部、Control Mapping ヘルパーが揃っています。**ポートはすべて実機で検証済みです。**
 
 - `src/EspMidiMessage.h` — `Message` / `PortId` / `Timestamp` / `MessageType`、ステータス分類とデータ長表、短いメッセージの構築と直列化
 - `src/EspMidiParser.h` — MIDI 1.0 バイトストリーム ⇄ `Message`。`Parser` が受信、`Serializer` が送信
@@ -16,8 +16,9 @@
 - `src/EspMidiEspUsbDevice.h` — `UsbDevicePort`。`EspUsbDevice` の cable 数だけポートを供給する
 - `src/EspMidiEspUsbHost.h` — `UsbHostPort`。接続された機器ごとに席を動的に供給する
 - `src/EspMidiEspBle.h` — `BleDevicePort` / `BleHostPort`。タイムスタンプを持つ唯一のポート
+- `src/EspMidiControl.h` — `Button` / `Analog` / `Encoder` / `ControlOutput` / `ClockGenerator` / `ClockCounter`
 
-**core と同梱ポートは完成しています。** 残るのは Control Mapping ヘルパー(Phase 9)だけです。
+**実装計画は完了しました。** core、ポート、Control Mapping ヘルパーが揃い、ハードウェアに依存しない部分はすべてホスト上のテストで固定されています。
 
 実機で確認したのは次のとおりです。`loopback/uart_midi`(1 台・**配線ゼロ**)、`peer/uart_midi`(2 台・既存配線をクロス)、`peer/usb_midi`(素の `EspUsbHost` が観測役。**cable 数を descriptor から読んで assert**)、`peer/usb_midi_host`(両端が `EspMidi`。**動的な席の出現**)、`peer/ble_midi`(無線・**タイムスタンプ**とダンプの往復)。
 
@@ -38,7 +39,7 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 | 6 | USB Device ポート | `unit/usb_device_port`、`peer/usb_midi` | **完了(実機検証済み)** |
 | 7 | USB Host ポート | `unit/usb_host_port`、`unit/concurrent_receive`、`peer/usb_midi_host` | **完了(実機検証済み)** |
 | 8 | BLE ポート(Device / Host) | `unit/ble_port`、`peer/ble_midi` | **完了(実機検証済み)** |
-| 9 | Control Mapping ヘルパー | `unit/control_mapping`、`manual/` | 予定 |
+| 9 | Control Mapping ヘルパー | `unit/control_mapping`、`manual/control_mapping.ja.md` | **完了** |
 
 基盤ライブラリへの変更依頼は Phase 0 の時点で提案済みです([LIBRARY_REQUESTS.ja.md](LIBRARY_REQUESTS.ja.md))。Phase 1〜5 は依頼と無関係に進むので、対応を待つ時間は発生しません。
 
@@ -194,14 +195,26 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 - **MIDI のコールバックは `EspMidi` が取る。** `EspBle` 側はどちらも 1 個だけの primary callback なので、スケッチは**ルーティング経由で読む**。接続の通知は additional listener なのでスケッチの `onConnected()` は奪わない。
 - **`EspBle` の名前が Device と Host で違う**(`onMessage()` / `onMidiMessage()`)。呼び分けている。
 
-### Phase 9: Control Mapping ヘルパー
+### Phase 9: Control Mapping ヘルパー(完了)
 
-- ボタン → Note / Control Change
-- アナログ入力 → Control Change
-- エンコーダ → Control Change
-- Note 受信による LED 制御、Control Change 受信による出力制御
-- 外部クロックと MIDI Clock の変換
-- 入力元を GPIO 番号に固定しない形
+- ✅ ボタン → Note / Control Change(デバウンス、ラッチ)
+- ✅ アナログ入力 → Control Change(範囲、反転、ヒステリシス、スムージング)
+- ✅ エンコーダ → Control Change(絶対と相対 3 形式)
+- ✅ Note 受信による LED 制御、Control Change 受信による出力制御(`ControlOutput`)
+- ✅ 外部クロックと MIDI Clock の変換(`ClockCounter` で測って `ClockGenerator` で出す)
+- ✅ 入力元を GPIO 番号に固定しない形
+- ✅ `examples/GpioControls`、`manual/control_mapping.ja.md`
+
+実装で確定した細部:
+
+- **GPIO に触らない。時刻も読まない。** ヘルパーは**読んだ値と今の時刻を引数で受け取る**。だから ADC でもポートエキスパンダでもタッチセンサでもネットワーク越しの値でも同じヘルパーが動き、**跳ねるスイッチもテンポ変化もホスト上のテストで作れる**。`analogRead()` を持つヘルパーは 1 種類の入力にしか使えないヘルパーになる。
+- **core に置いた**(ポートではない)。ハードウェアに触らないので `EspMidi.h` から include している。
+- **最初の読み取りは何も送らない。** ペダルを踏んだまま起動したボードが、誰も弾いていないノートを報告しないため。明示的に送りたいときは `resend()`。
+- **つまみは値が変わったときだけ送る。** ADC 4096 段に対して CC は 128 段なので、ほとんどの動きは同じ値に着地する。加えてヒステリシス(既定 8 カウント)で、**触っていないつまみがリンクを埋めない**。
+- **エンコーダの相対形式は 3 種類とも実装した。** 標準が無く、間違えるとパラメータが逆に回るか動かない。**63 を超える回転は複数メッセージに分ける**(clamp すると速い回転が失われる)。
+- **`ControlOutput` は `Filter` を再利用する。** 「ch1 のノート 60」も「CC 20〜27」も、ルートに置くフィルタと同じ書き方になる。**ノートオンでベロシティ 0 は消灯**なので LED が点いたままにならない。
+- **クロックの追いつきには上限がある。** 長い SysEx や詰まった書き込みで `loop()` が止まったあと、遅れを全部出すと音楽的に無意味なバーストになる。1 回の `update()` で 24 tick までにして、あとはスケジュールを取り直す。
+- **テンポは BPM の 100 倍の整数**で扱う。core に浮動小数点の要求を作らず、0.01 BPM は聴感より細かい。
 
 ## examples
 
@@ -219,12 +232,21 @@ Phase 1〜4 はすべてホスト上で完結するので、実機なしで core
 | ~~BLE MIDI キーボードを UART 音源へ中継(UC5)~~ → `BleMidiToUart` | 5, 8 |
 | MIDI と HID の同居(UC6) | 6 |
 | チャンネルの振り分けとトランスポーズ(UC7) | 4, 5, 7 |
-| GPIO のつまみを Control Change に(UC10) | 9 |
+| ~~GPIO のつまみを Control Change に(UC10)~~ → `GpioControls` | 6, 9 |
 
 ## 未確定事項
 
-[DECISIONS.ja.md](DECISIONS.ja.md) の「仮置き」に挙げた 3 件です。
+**ありません。** [DECISIONS.ja.md](DECISIONS.ja.md) の「仮置き」3 件はすべて解消しました。
 
-1. フィルタと変換の具体的な API 形状(Phase 4 で確定)
-2. キューの深さと SysEx 一時バッファのサイズの既定値(Phase 3 で確定)
+1. ~~フィルタと変換の具体的な API 形状~~ → Phase 4 で確定
+2. ~~キューの深さと SysEx 一時バッファのサイズの既定値~~ → Phase 3 で確定
 3. ~~暗黙のポート群をハンドルとして露出するか~~ → **予約ハンドルとして露出する**(`InGroup::all()` / `OutGroup::all()`)。Phase 2 で確定
+
+## ここから先
+
+実装計画は完了しました。次にやることの候補です。
+
+- **リリース。** [RELEASE_CHECKLIST.ja.md](RELEASE_CHECKLIST.ja.md) の手順で 0.1.0 を出す。
+- **`manual/` の手順を足す。** [../tests/manual/README.ja.md](../tests/manual/README.ja.md) の「追加予定」に 5 件残っている(実 MIDI DIN、Host OS の認識、実 USB MIDI 機器、BLE ペアリング、実機の音色ダンプ)。**実機と人の目が要るので自動化しない**と決めた分です。
+- **`loopback/usb_host_device`**(ESP32-P4 1 台で USB Host と USB Device を同時に)。`examples/UsbHostToUart` の構成をそのまま自動テストにできる。
+- **MIDI 2.0 / UMP。** 器の側は地続きにしてあります([DECISIONS.ja.md](DECISIONS.ja.md) の決定 1)。`MessageType` は UMP のメッセージタイプ番号、`Timestamp` は単位付き、`ValueMap` は端点を正規化して持つので、**幅を広げても既存の規則の意味が変わりません**。

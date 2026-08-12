@@ -18,7 +18,7 @@
 
 ## 手順
 
-まだありません。[../TEST_PLAN.ja.md](../TEST_PLAN.ja.md) のカバレッジ計画を参照してください。
+- [`control_mapping.ja.md`](control_mapping.ja.md): 実ボタン・実つまみ・実エンコーダの操作感(Phase 9)。`unit/control_mapping` が固定しているのは値と時刻の扱いで、**人の手に対してどう感じられるかは assert できません**。
 
 ## 追加予定
 
@@ -27,4 +27,3 @@
 - `usb_host_real_devices`: 実際の USB MIDI キーボード・パッド・音源をつないで動作を確認する。複数機器、USB ハブ経由、複合機器を含む(Phase 7)。
 - `ble_midi_pairing`: 実 BLE MIDI 機器とのペアリングと再接続を確認する。iOS / Android / PC からの見え方も含む(Phase 8)。
 - `sysex_dump`: 実機の音色ダンプ(長い SysEx)を実際に転送し、受け側で正しく読み込めることを確認する(Phase 5 以降)。
-- `control_mapping`: 実ボタン・実エンコーダの操作感とサンプリング精度を確認する(Phase 9)。

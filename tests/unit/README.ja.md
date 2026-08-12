@@ -21,6 +21,8 @@ core は Arduino / ESP-IDF / ハードウェアに依存しない純粋 C++ で�
 
 そこまでやると、実機のテストに残るのは**バイトが本当にパッドを渡ること**だけになります。逆に言えば、実機でしか確認できないことだけを [`../loopback/`](../loopback/) と [`../peer/`](../peer/) に残す、というのがポートを追加するときの方針です。
 
+同じ考え方は Control Mapping にも効いています。`control_mapping/` のヘルパーは**値と時刻を引数で受け取る**ので、跳ねるスイッチも揺れる ADC もテンポ変化もここでは単なる数値です。実機に残るのは「人の手にどう感じられるか」だけで、それは [`../manual/control_mapping.ja.md`](../manual/control_mapping.ja.md) にあります。
+
 ## subject 一覧
 
 実装順([../../docs/DEVELOPMENT_PLAN.ja.md](../../docs/DEVELOPMENT_PLAN.ja.md))に合わせて増やします。
@@ -41,6 +43,7 @@ core は Arduino / ESP-IDF / ハードウェアに依存しない純粋 C++ で�
 | `usb_device_port/` | USB Device ポート。**cable 数の向きの反転** / cable 0 本 / 16 本への丸め / mount と unmount / 未宣言 cable の破棄 | 実装済み |
 | `usb_host_port/` | USB Host ポート。動的な席の出現 / 遅れて claim される機器 / 切断と再接続の照合 / 複数機器 / リングの上限 | 実装済み |
 | `ble_port/` | BLE ポート(Device / Host)。**タイムスタンプ** / **ダンプの再組み立てと上限** / 購読状態 / アドレスによる席の照合 | 実装済み |
+| `control_mapping/` | ボタンのデバウンスとラッチ / つまみのヒステリシスと反転 / エンコーダの 3 形式 / 受信からの出力制御 / MIDI Clock の生成と計測 | 実装済み |
 | `concurrent_receive/` | **`receive()` を複数スレッドから同時に呼ぶ。** 受理したものが 1 度ずつ出てくること、失ったものが数えられること | 実装済み |
 
 `test_repository_structure.py` はハードウェアも C++ も要らないリポジトリ構造の検査で、必須ファイルの存在と README の一覧一致を固定します。
