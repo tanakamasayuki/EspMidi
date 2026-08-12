@@ -2,7 +2,7 @@
 
 `EspMidi` は既存の汎用ライブラリが提供する MIDI 機能の上に統合層を提供する。基盤ライブラリへ変更が必要になった場合、その依頼と状況をここで追跡する。
 
-依頼の本文は**依頼先リポジトリの `docs/` に置く**。同一作者の管理下にあるライブラリ群で、既に `EspUsbHost/docs/lifecycle-listener-proposal.ja.md` という先例がある形式に合わせている。
+依頼の本文は**依頼先リポジトリの `docs/` に置く**。同一作者の管理下にあるライブラリ群で、既に [`EspUsbHost/docs/lifecycle-listener-proposal.ja.md`](https://github.com/tanakamasayuki/EspUsbHost/blob/main/docs/lifecycle-listener-proposal.ja.md) という先例がある形式に合わせている。
 
 ## 方針
 
@@ -23,7 +23,7 @@
 
 ### 1. EspUsbDevice — MIDI 複数 cable 対応
 
-本文: [`EspUsbDevice/docs/MIDI_MULTI_CABLE_PROPOSAL.ja.md`](../../EspUsbDevice/docs/MIDI_MULTI_CABLE_PROPOSAL.ja.md)
+本文: [`EspUsbDevice/docs/MIDI_MULTI_CABLE_PROPOSAL.ja.md`](https://github.com/tanakamasayuki/EspUsbDevice/blob/main/docs/MIDI_MULTI_CABLE_PROPOSAL.ja.md)
 
 `configurationDescriptor()` が TinyUSB の 1 cable 固定テンプレート `TUD_MIDI_DESCRIPTOR` を使っているため、ESP32 を複数ポートの MIDI インターフェースとして PC に見せられなかった。パケット API 側は `header` の上位ニブルで既に cable を扱えており、必要な TinyUSB マクロも cable 数で parameterize されているので、**descriptor の組み立てだけの変更**で済んだ。
 
@@ -55,7 +55,7 @@ helper が `cableCount()` 以上の cable で **false を返す**のは重要な
 
 ### 2. EspUsbHost — MIDI cable 数と jack 名の公開
 
-本文: [`EspUsbHost/docs/midi-cable-discovery-proposal.ja.md`](../../EspUsbHost/docs/midi-cable-discovery-proposal.ja.md)
+本文: [`EspUsbHost/docs/midi-cable-discovery-proposal.ja.md`](https://github.com/tanakamasayuki/EspUsbHost/blob/main/docs/midi-cable-discovery-proposal.ja.md)
 
 MIDI descriptor の jack 情報を全くパースしていないため、接続機器のポート数が分からなかった。`EspMidi` のポートは「論理的な席」で、接続時点にポート数が確定していることを前提にしている([DATA_MODEL.ja.md](DATA_MODEL.ja.md) のポートモデル)。特に**ホスト → 機器方向の cable 数を知る手段が全く無い**のが問題で、複数ポートを持つ MIDI 音源へ振り分ける構成が組めなかった。
 
