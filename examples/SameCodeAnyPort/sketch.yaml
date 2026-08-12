@@ -1,0 +1,24 @@
+# All three transports are listed so any setting of MIDI_PORT builds. A sketch
+# that only uses one of them needs only that one.
+profiles:
+  esp32s3:
+    fqbn: esp32:esp32:esp32s3:USBMode=default
+    platforms:
+      - platform: esp32:esp32 (3.3.11)
+        platform_index_url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+    libraries:
+      - dir: ../../
+      - EspUsbDevice (2.0.2)
+      - EspBle (1.2.0)
+
+  esp32s3_local:
+    fqbn: esp32:esp32:esp32s3:USBMode=default
+    platforms:
+      - platform: esp32:esp32 (3.3.11)
+        platform_index_url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+    libraries:
+      - dir: ../../
+      - dir: ../../../EspUsbDevice
+      - dir: ../../../EspBle
+
+default_profile: esp32s3

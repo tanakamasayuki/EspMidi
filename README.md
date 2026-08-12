@@ -61,11 +61,31 @@ That is what lets MIDI **coexist with everything else**: exposing MIDI and HID f
 
 Sequencers, DAW features, software synthesis and audio generation are out of scope, as are AppleMIDI and RTP-MIDI for now. See the non-goals in [docs/REQUIREMENTS.ja.md](docs/REQUIREMENTS.ja.md).
 
-## This library is optional
+## It is worth using with a single port too
 
-**If you only use MIDI in one direction — input only, or output only — you do not need it.** Use `EspUsbHost`, `EspUsbDevice` or `EspBle` directly; each keeps its own MIDI convenience API and examples for exactly that.
+The main target is where **several interfaces meet**, but a single port benefits as well: **the API is the same whichever interface it is.**
 
-`EspMidi` earns its place where **several interfaces meet**.
+```cpp
+// only this line changes
+espmidi::UartPort      port(router, Serial1, 1);
+espmidi::UsbDevicePort port(router, usbMidi, usb);
+espmidi::BleDevicePort port(router, bleMidi);
+```
+
+**Everything below it is byte-for-byte identical** — routes, filters, transforms, how SysEx arrives, how velocity 0 is treated, how messages are received. See [`examples/SameCodeAnyPort`](examples/SameCodeAnyPort/).
+
+- Built on UART, later moved to USB MIDI? The port declaration and `begin()`.
+- Built on USB, now BLE as well? One more port and one more route.
+- Using each transport's own API instead spreads those differences through **your** code.
+
+**If it really is one port, one direction, and never going to grow**, using `EspUsbHost`, `EspUsbDevice` or `EspBle` directly is lighter; each keeps its own MIDI convenience API and examples for exactly that.
+
+## Guides
+
+- **[docs/GUIDE.ja.md](docs/GUIDE.ja.md)** — the usage guide, starting from sending on a single port. Includes **troubleshooting** and how to read the diagnostic counters.
+- **[docs/MIDI_BASICS.ja.md](docs/MIDI_BASICS.ja.md)** — **the caveats of MIDI itself** (a note on with velocity 0, running status, 0-based channels, bandwidth) and **per-interface notes** (MIDI DIN isolation, cables, enumeration, BLE latency and limits).
+
+Both are Japanese only. If you are new to MIDI, the second one saves the most time.
 
 ## Ports
 
@@ -97,8 +117,13 @@ What they produce goes onto an application port, so **a control change from a kn
 
 All of them are **practical**: sketches you can flash as they are.
 
+**New to it? Start with the first three.**
+
 | Example | What it is |
 | --- | --- |
+| [`SimpleMidiOut`](examples/SimpleMidiOut/) | **the smallest**: one port, sending only, plays a scale |
+| [`SimpleMidiIn`](examples/SimpleMidiIn/) | one port, receiving only; prints what arrives |
+| [`SameCodeAnyPort`](examples/SameCodeAnyPort/) | **the same code over UART, USB and BLE — one line changes** |
 | [`UartMidiMonitor`](examples/UartMidiMonitor/) | prints UART MIDI while passing it on to a second UART unchanged |
 | [`UsbMidiDevice`](examples/UsbMidiDevice/) | appears to a PC as a two-port USB MIDI interface |
 | [`UsbHostToUart`](examples/UsbHostToUart/) | a USB keyboard plays a DIN module while a PC also hears it |

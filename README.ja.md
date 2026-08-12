@@ -61,11 +61,31 @@ UART MIDI ──────┘   フィルタ・基本変換            └─ 
 
 シーケンサー、DAW 機能、ソフトウェアシンセサイザー、音声生成は対象外です。AppleMIDI / RTP-MIDI は初期スコープに含めません。詳細は [docs/REQUIREMENTS.ja.md](docs/REQUIREMENTS.ja.md) の非目標にあります。
 
-## このライブラリは任意です
+## ポートが 1 つでも使えます
 
-**MIDI 入力だけ、あるいは出力だけを片方向に使うなら、このライブラリは要りません。** `EspUsbHost` / `EspUsbDevice` / `EspBle` を直接使えば済みます。各ライブラリはそのための MIDI 便利 API と example を持ち続けます。
+主眼は**複数のインターフェースが出会う場所**ですが、**1 ポートだけで使っても意味があります。どのインターフェースでも API が同じ**になるからです。
 
-`EspMidi` に価値が出るのは、**複数のインターフェースが出会う場所**です。
+```cpp
+// 変えるのはここだけ
+espmidi::UartPort      port(router, Serial1, 1);
+espmidi::UsbDevicePort port(router, usbMidi, usb);
+espmidi::BleDevicePort port(router, bleMidi);
+```
+
+**この下は 1 文字も変わりません。** ルート、フィルタ、変換、SysEx の扱い、velocity 0 の扱い、受信の受け方 — すべて共通です([`examples/SameCodeAnyPort`](examples/SameCodeAnyPort/))。
+
+- UART で作って、あとで USB MIDI にする → ポートの宣言と `begin()` だけ
+- USB で作って、BLE も足す → ポートを増やしてルートを 1 本足す
+- トランスポートごとの API を直接使うと、この差分が**アプリ側のコードに散ります**
+
+**片方向 1 ポートだけで、しかも将来増える見込みがないなら**、`EspUsbHost` / `EspUsbDevice` / `EspBle` を直接使うほうが軽く済みます。各ライブラリはそのための MIDI 便利 API と example を持ち続けます。
+
+## 使い方ガイド
+
+- **[docs/GUIDE.ja.md](docs/GUIDE.ja.md)** — 1 ポートの送信から順に進む使い方ガイド。**「よくあるつまずき」**と診断カウンタの読み方もここにあります
+- **[docs/MIDI_BASICS.ja.md](docs/MIDI_BASICS.ja.md)** — **MIDI 自体の注意事項**(velocity 0 のノートオン、running status、チャンネルの 0 始まり、帯域)と**インターフェース別の注意点**(MIDI DIN の絶縁、cable、列挙、BLE のレイテンシと上限)
+
+MIDI に不慣れな場合は 2 番目を先に読むと、ハマる回数が減ります。
 
 ## ポート
 
@@ -99,8 +119,13 @@ button.update(digitalRead(BUTTON_PIN) == LOW, millis());
 
 すべて**実用例**です。そのまま書き込めます。
 
+**はじめての方は上の 3 つから。**
+
 | example | 内容 |
 | --- | --- |
+| [`SimpleMidiOut`](examples/SimpleMidiOut/) | **最小**。1 ポート・送信のみでドレミを鳴らす |
+| [`SimpleMidiIn`](examples/SimpleMidiIn/) | 1 ポート・受信のみ。届いた MIDI を表示 |
+| [`SameCodeAnyPort`](examples/SameCodeAnyPort/) | **同じコードを UART・USB・BLE で。1 行変えるだけ** |
 | [`UartMidiMonitor`](examples/UartMidiMonitor/) | UART の MIDI を表示しながら、もう 1 本の UART へそのまま流す |
 | [`UsbMidiDevice`](examples/UsbMidiDevice/) | PC に 2 ポートの USB MIDI インターフェースとして見える |
 | [`UsbHostToUart`](examples/UsbHostToUart/) | USB MIDI キーボードで DIN 音源を鳴らしながら PC にも流す |

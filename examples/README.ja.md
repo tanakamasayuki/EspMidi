@@ -8,13 +8,21 @@ examples はすべて**実用例**です。実ハードウェア構成でその�
 
 ## Examples
 
+**はじめての方は最初の 3 つを順に**読んでください。使い方ガイドは [../docs/GUIDE.ja.md](../docs/GUIDE.ja.md)、MIDI 自体の注意点は [../docs/MIDI_BASICS.ja.md](../docs/MIDI_BASICS.ja.md) です。
+
+### まずここから(ポート 1 つ)
+
+- `SimpleMidiOut`: 最小のスケッチ。1 ポート・送信のみ。ドレミを鳴らすので、音源をつないで電源を入れれば音が出ます。
+- `SimpleMidiIn`: 1 ポート・受信のみ。届いた MIDI を表示するので、キーボードが何を送っているかが見えます。
+- `SameCodeAnyPort`: **同じ MIDI コードを UART・USB・BLE で動かします。1 行変えるだけ。** ポートが 1 つでもこのライブラリを使う理由がこれです。
+
+### 実用構成
+
 - `UartMidiMonitor`: UART の MIDI をコンソールに表示しながら、もう 1 本の UART へそのまま流します。キーボードと音源の間に挟んでも演奏が止まりません。
 - `UsbMidiDevice`: PC に 2 ポートの USB MIDI インターフェースとして見えます。ポート 1 は MIDI DIN 対、ポート 2 はボード自身。
 - `UsbHostToUart`: USB MIDI キーボードで MIDI DIN の音源を鳴らしながら、同じ演奏を PC にも流します(UC1)。
 - `BleMidiToUart`: ワイヤレスの BLE MIDI キーボードで MIDI DIN の音源を鳴らします(UC5)。
 - `GpioControls`: つまみ・ボタン・エンコーダの MIDI コントローラ。USB MIDI と MIDI DIN の両方に出ます(UC10)。
-
-ポートが動くようになった Phase から順に増やします。追加予定の一覧は [../docs/DEVELOPMENT_PLAN.ja.md](../docs/DEVELOPMENT_PLAN.ja.md) にあります。
 
 ## 置き方
 

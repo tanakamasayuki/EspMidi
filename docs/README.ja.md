@@ -9,6 +9,9 @@
 | やりたいこと | 読む文書 |
 | --- | --- |
 | ライブラリが何をするものか知り、動くスケッチを見る | [../README.ja.md](../README.ja.md) |
+| **はじめて使う。1 ポートから順に覚える** | **[GUIDE.ja.md](GUIDE.ja.md)** → [../examples/SimpleMidiOut/](../examples/SimpleMidiOut/) |
+| **MIDI 自体でハマった。インターフェース別の注意点を知る** | **[MIDI_BASICS.ja.md](MIDI_BASICS.ja.md)** |
+| 動かない原因を切り分ける | [GUIDE.ja.md](GUIDE.ja.md) の「よくあるつまずき」 |
 | 自分の構成向けのスケッチを探す | [../examples/README.ja.md](../examples/README.ja.md) — すべてそのまま書き込める完結したスケッチ |
 | 使うポートを選び、できること・できないことを知る | [PORTS.ja.md](PORTS.ja.md) |
 | MIDI メッセージとポートがなぜこの形なのかを知る | [DATA_MODEL.ja.md](DATA_MODEL.ja.md) |
@@ -19,6 +22,11 @@
 | MIDI 2.0 対応の見通しを知る | [DECISIONS.ja.md](DECISIONS.ja.md) の決定 1 と [DATA_MODEL.ja.md](DATA_MODEL.ja.md) の「MIDI 2.0 への地続き」 |
 
 ## 文書一覧
+
+**使う人向け**
+
+- [GUIDE.ja.md](GUIDE.ja.md) — 使い方ガイド。1 ポートの送信から複数ポートのルーティングまで順に進みます。「よくあるつまずき」と診断カウンタの読み方もここ。
+- [MIDI_BASICS.ja.md](MIDI_BASICS.ja.md) — MIDI 自体の注意事項(velocity 0、running status、チャンネルの 0 始まり、帯域)とインターフェース別の注意点(DIN の絶縁、cable、列挙、BLE のレイテンシと上限)。
 
 **設計(全体像を掴むならこの順)**
 
@@ -45,3 +53,4 @@
 - 設計文書(`DATA_MODEL` / `ROUTING` / `CORE_DESIGN`)は**仕様**を書く。実装状況は `DEVELOPMENT_PLAN.ja.md` と `PORTS.ja.md` の状況列に集約し、設計文書側で「実装済み / 未実装」を書き分けない。
 - `PORTS.ja.md` は「予定」「実装済み(実機検証待ち)」「実装済み(実機検証済み)」を区別する。リリース可否の判断で状況列をそのまま信用できるようにするため。
 - 設計を変えたら `DECISIONS.ja.md` に理由と、採らなかった案を残す。
+- **使う人向けの文書(`GUIDE` / `MIDI_BASICS`)には仕様を書かない。** 正本は設計文書側に置き、こちらからは参照する。同じことを 2 箇所に書くと必ず片方が古くなる。

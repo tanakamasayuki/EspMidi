@@ -8,13 +8,21 @@ They all follow the same three steps: 1) start the stacks, 2) create the ports, 
 
 ## Examples
 
+**If you are new, read the first three in order.** The guide is [../docs/GUIDE.ja.md](../docs/GUIDE.ja.md) and the MIDI caveats worth knowing are in [../docs/MIDI_BASICS.ja.md](../docs/MIDI_BASICS.ja.md) (Japanese).
+
+### Start here — one port
+
+- `SimpleMidiOut`: the smallest sketch. One port, sending only: it plays a scale, so a sound module makes a noise as soon as the board is powered.
+- `SimpleMidiIn`: one port, receiving only. It prints what arrives, so you can see what a keyboard actually sends.
+- `SameCodeAnyPort`: **the same MIDI code over UART, USB and BLE — one line changes.** This is the reason to use the library even with a single interface.
+
+### Real setups
+
 - `UartMidiMonitor`: prints UART MIDI to the console while passing it on to a second UART unchanged. Put it between a keyboard and a sound module and the playing keeps working.
 - `UsbMidiDevice`: appears to a PC as a two-port USB MIDI interface. Port 1 is the MIDI DIN pair, port 2 is the board itself.
 - `UsbHostToUart`: a USB MIDI keyboard plays a MIDI DIN sound module while the same performance also reaches a PC (UC1).
 - `BleMidiToUart`: a wireless BLE MIDI keyboard plays a MIDI DIN sound module (UC5).
 - `GpioControls`: a MIDI controller of knobs, buttons and an encoder, sending to USB MIDI and MIDI DIN at once (UC10).
-
-More are added from the phase in which each port starts working; see [../docs/DEVELOPMENT_PLAN.ja.md](../docs/DEVELOPMENT_PLAN.ja.md) for the planned list.
 
 ## Layout
 

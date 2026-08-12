@@ -9,6 +9,9 @@ Which document to read, and in what order. The design documents are Japanese onl
 | What you want | Document |
 | --- | --- |
 | Learn what the library does and see a working sketch | [../README.md](../README.md) |
+| **Start using it, one port at a time** | **[GUIDE.ja.md](GUIDE.ja.md)** → [../examples/SimpleMidiOut/](../examples/SimpleMidiOut/) |
+| **Hit something in MIDI itself, or a per-interface caveat** | **[MIDI_BASICS.ja.md](MIDI_BASICS.ja.md)** |
+| Work out why nothing is arriving | the troubleshooting section of [GUIDE.ja.md](GUIDE.ja.md) |
 | Find a sketch for your setup | [../examples/README.md](../examples/README.md) — every example is a complete, flashable sketch |
 | Choose the ports you need and learn their limits | [PORTS.ja.md](PORTS.ja.md) |
 | Understand why the MIDI message and port model look like this | [DATA_MODEL.ja.md](DATA_MODEL.ja.md) |
@@ -17,6 +20,13 @@ Which document to read, and in what order. The design documents are Japanese onl
 | See the current position and remaining work | [DEVELOPMENT_PLAN.ja.md](DEVELOPMENT_PLAN.ja.md) and the status column in [PORTS.ja.md](PORTS.ja.md) |
 | Understand why it is designed this way | [DECISIONS.ja.md](DECISIONS.ja.md) |
 | See the outlook for MIDI 2.0 | decision 1 in [DECISIONS.ja.md](DECISIONS.ja.md) and the MIDI 2.0 section of [DATA_MODEL.ja.md](DATA_MODEL.ja.md) |
+
+## For users
+
+- `GUIDE.ja.md` — the usage guide: from sending on a single port up to routing between several, with a troubleshooting section and how to read the diagnostic counters.
+- `MIDI_BASICS.ja.md` — the caveats of MIDI itself (velocity 0, running status, 0-based channels, bandwidth) and per-interface notes (DIN isolation, cables, enumeration, BLE latency and limits).
+
+Both are Japanese only, like the design documents.
 
 ## All documents
 
