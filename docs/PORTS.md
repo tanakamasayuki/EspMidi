@@ -33,6 +33,7 @@ Sends and receives a MIDI 1.0 byte stream at 31250 baud. The protocol and the ph
 - Resolving running status and message lengths is the core parser's work.
 - SysEx is detected at its boundaries (`0xF0` / `0xF7`) and delivered in chunks.
 - `begin(name, rxPin, txPin)` opens the `HardwareSerial` at 31250 baud, supplies the seats and registers the output sink. It is **idempotent**: reconfiguring is calling `begin()` again.
+- **A serial that was already open is closed first.** An ESP32 reaches a pad through the GPIO matrix, and **opening a second pad does not take the first one back**. Reopening on different pins without closing leaves the old ones attached, and the board transmits on a pin nobody asked for (seen on a bench).
 - Receiving is polled from `update()`. **At most `ESPMIDI_UART_RX_BYTES` (64 by default) per call**, so a device streaming a dump cannot hold `loop()`.
 - Sending does not use running status. One output port carries messages that came from several inputs, and a receiver that loses one byte of a compressed stream misreads everything after it.
 

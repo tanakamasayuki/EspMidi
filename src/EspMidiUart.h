@@ -78,8 +78,21 @@ public:
   //
   // `rxPin` and `txPin` are passed through to HardwareSerial::begin(); -1 leaves
   // the peripheral's default pins.
+  //
+  // **A port that was already open is closed first.** On an ESP32 a peripheral
+  // reaches a pad through the GPIO matrix, and opening a second pad does not take
+  // the first one back: without this, calling begin() again with different pins
+  // leaves the old ones attached and the board transmits on a pin nobody asked
+  // for. It cost an afternoon on a bench to find, so it is fixed here rather than
+  // written down as a caveat.
   bool begin(const char *name = "UART MIDI", int8_t rxPin = -1, int8_t txPin = -1)
   {
+    if (started_)
+    {
+      serial_.end();
+      started_ = false;
+    }
+
     EndpointIdentity identity;
     identity.transport = Transport::Uart;
     identity.index = index_;

@@ -92,6 +92,8 @@ using MyPort = BasicMyPort<RealTransport>;
 
 再設定は「もう一度 `begin()`」で済むようにします。`attachEndpoint()` と `attachInPort()` が冪等なので、**同じ引数なら同じ席が返ります**。新しい席を作ってはいけません — スケッチのルートが古い席を指したままになります。
 
+**引数が変わったときは、掴んでいた資源を先に手放してください。** 席は冪等でも、**その下のペリフェラルは冪等ではありません**。ESP32 は GPIO マトリクス経由でパッドにつなぐので、2 つ目のピンを開いても 1 つ目は外れず、**誰も指定していないピンに信号が出続けます**。`espmidi::UartPort::begin()` は開いていた `HardwareSerial` を先に閉じます。
+
 ### 3. 席は消さない
 
 切断では `detachEndpoint()` を呼び、**状態だけを `Disconnected` にします**。`PortRegistry` に席を削除する API はありません。これが「抜き差ししてもルートを張り直さなくてよい」の根拠です([DATA_MODEL.ja.md](DATA_MODEL.ja.md))。

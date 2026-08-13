@@ -42,7 +42,13 @@ struct FakeSerial
     txPin = tx_;
   }
 
-  void end() { open = false; }
+  void end()
+  {
+    open = false;
+    ends++;
+  }
+
+  int ends = 0;
 
   int available() const { return open ? static_cast<int>(rx.size()) : 0; }
 
@@ -198,6 +204,23 @@ void test_begin_is_idempotent()
   assert(f.uart.in() == in);
   assert(f.uart.out() == out);
   assert(f.registry.portCount() == ports);
+}
+
+void test_reopening_releases_the_previous_pins()
+{
+  // On an ESP32 a peripheral reaches a pad through the GPIO matrix, and opening a
+  // second pad does not take the first one back. So begin() has to close what it
+  // opened before, or a board reconfigured onto new pins keeps transmitting on the
+  // old ones — which is exactly what happened on the bench.
+  Fixture f;
+  assert(f.serial.ends == 0);
+
+  assert(f.uart.begin("UART MIDI", 7, 6));
+
+  assert(f.serial.ends == 1);
+  assert(f.serial.open);
+  assert(f.serial.rxPin == 7);
+  assert(f.serial.txPin == 6);
 }
 
 void test_received_bytes_reach_the_router()
@@ -369,6 +392,7 @@ int main()
 {
   run(test_begin_supplies_one_endpoint_with_two_ports);
   run(test_begin_is_idempotent);
+  run(test_reopening_releases_the_previous_pins);
   run(test_received_bytes_reach_the_router);
   run(test_nothing_is_received_before_begin);
   run(test_a_read_is_bounded);

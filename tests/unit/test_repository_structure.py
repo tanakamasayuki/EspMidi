@@ -143,6 +143,13 @@ def test_required_project_files_exist():
         "tests/peer/ble_midi/peer_device/peer_device.ino",
         "tests/peer/ble_midi/peer_device/sketch.yaml",
         "tests/manual/README.ja.md",
+        # A manual test: the rig is built by hand, the test then runs on its own.
+        # The filename has no `test_` prefix on purpose, so pytest collects it only
+        # when it is named — the equipment is not permanently connected.
+        "tests/manual/usb_if_din/usb_if_din.ino",
+        "tests/manual/usb_if_din/usb_if_din.py",
+        "tests/manual/usb_if_din/sketch.yaml",
+        "tests/manual/usb_if_din/README.ja.md",
         "tests/manual/control_mapping.ja.md",
         "tests/manual/uart_midi_din.ja.md",
         "tests/manual/usb_device_host_os.ja.md",

@@ -14,7 +14,10 @@
 
 **peer test** は、常時接続された ESP32-S3 **2台**を使い、ポートの境界だけを確認します。core の正しさは peer ではなく unit test を主戦場にします。
 
-**manual test** は、配線、Host OS の認識、Bluetooth ペアリング、実 MIDI 機器、目視確認が検証の本質に含まれる場合だけに使います。
+**manual test** は、**常時つながっていない機材が要る**テストです。手で実行します。2 種類あります。
+
+- **手動テスト**: 治具を組むまでが手動で、そのあとは自動で流れる。**ファイル名から `test_` を外し**、明示的に指定したときだけ collect されるようにする
+- **手順書**: 人の操作や判断そのものが検証対象で、assert できない
 
 ```text
 tests/
@@ -23,7 +26,7 @@ tests/
   examples_compile/  自動 - examples sketch の build-only smoke
   loopback/          自動 - 1 台で複数ポートを往復
   peer/              自動 - 2 台でポート境界を確認
-  manual/            手動 - OS 認識、ペアリング、配線、実 MIDI 機器、目視
+  manual/            手動 - 常時つながっていない機材。手動テストと手順書
 ```
 
 ## テスト環境
@@ -35,6 +38,7 @@ tests/
 - **S3 peer**: 常時接続された ESP32-S3 2台。USB data pin を直結し、USB / BLE / UART のポート境界を確認する。`.env` では `TEST_SERIAL_PORT_S3_PEER_HOST` と `TEST_SERIAL_PORT_PEER_DEVICE_S3_PEER_DEVICE`。
 - **P4 loopback**: 必要時に接続する ESP32-P4 1台。USB Host と USB Device を同一ボードで動かす構成に使う。常時接続の前提にはしない。
 - **Manual S3**: 実 MIDI 機器、実 MIDI DIN 配線、DAW の認識確認など。`.env` では `TEST_SERIAL_PORT_ESP32S3`。
+- **DIN rig**: USB MIDI インターフェースと MIDI DIN 回路を輪にした治具(`manual/usb_if_din`)。ボードもプロファイルも上の Manual S3 を使い回し、追加で回路につないだ GPIO を `ESPMIDI_DIN_TX_PIN` / `ESPMIDI_DIN_RX_PIN` で渡します。**ピンは治具ごとに違うのでビルドに焼き込まず、起動後にコンソールから渡します。**
 
 ## UART の配線
 
@@ -105,9 +109,23 @@ BLE のテストは配線不要(無線リンク)ですが、使うボードは�
 
 `loopback/uart_midi` と `peer/uart_midi` はこの形です。
 
-## manual に残したもの
+## manual に置いたもの
 
-自動テストで assert できないものだけを [`manual/`](manual/) に手順として置いてあります。**6 件すべて手順が書かれていて、リリース前に一度は人が通す必要があります。**
+### 手動テスト(治具さえ組めば自動)
+
+| テスト | ここでしか分からないこと |
+| --- | --- |
+| [`usb_if_din`](manual/usb_if_din/README.ja.md) | **実 MIDI DIN 回路と実 USB MIDI インターフェース越しに、UART ポートと USB Host ポートが噛み合うこと。** 往路は DIN、復路は USB と物理層が別 |
+
+```sh
+uv run --env-file .env pytest manual/usb_if_din/usb_if_din.py
+```
+
+**`test_` を外してあるので `pytest manual/` では動きません。** 機材が常時つながっていないので、意図せず走らせないためです。
+
+### 手順書(人の判断が本質)
+
+自動テストで assert できないものを [`manual/`](manual/) に手順として置いてあります。**6 件すべて手順が書かれていて、リリース前に一度は人が通す必要があります。**
 
 | 手順 | ここでしか分からないこと |
 | --- | --- |

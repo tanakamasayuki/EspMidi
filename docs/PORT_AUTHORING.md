@@ -92,6 +92,8 @@ using MyPort = BasicMyPort<RealTransport>;
 
 Reconfiguring should be "call `begin()` again". `attachEndpoint()` and `attachInPort()` are idempotent, so **the same arguments return the same seats**. Never create a new seat: the sketch's routes would keep pointing at the old one.
 
+**When the arguments change, release what you were holding first.** The seats are idempotent; **the peripheral underneath is not**. An ESP32 reaches a pad through the GPIO matrix, so opening a second pin does not take the first one back and the board keeps driving a pin nobody asked for. `espmidi::UartPort::begin()` closes an already-open `HardwareSerial` before opening it again.
+
 ### 3. Never remove a seat
 
 On disconnect, call `detachEndpoint()` and **change only the state to `Disconnected`**. There is no API in `PortRegistry` to remove a seat. That is the whole basis of "unplugging does not mean rebuilding routes" ([DATA_MODEL.md](DATA_MODEL.md)).

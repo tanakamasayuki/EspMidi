@@ -2,19 +2,37 @@
 
 [日本語](README.ja.md)
 
-Procedures for tests where human action or judgement is part of what is being verified.
+**Tests that need equipment which is not permanently connected.** They are run by hand.
 
-**These procedures are never mixed into the automated pass criteria.** Anything that can be asserted automatically belongs in `unit/`, `loopback/` or `peer/`.
+There are two kinds here:
+
+| | |
+| --- | --- |
+| **Manual tests** | building the rig is manual; **after that the test runs on its own**. Run by naming the file on the pytest command line |
+| **Procedures** | human action or judgement is itself what is being verified, so nothing can be asserted |
+
+**Neither is mixed into the automated pass criteria.** Anything the always-connected bench can assert belongs in `unit/`, `loopback/` or `peer/`.
 
 ## What belongs here
 
 Only things that match one of these:
 
+- **Equipment that is not permanently connected is required** (a real MIDI DIN circuit, a USB MIDI interface, a real instrument).
 - Real wiring is required (an opto-isolated MIDI DIN circuit, for example).
 - Host OS or DAW recognition is the subject (how port names and port counts appear).
 - Bluetooth pairing interaction is the subject.
 - The behaviour of a real MIDI device is the subject (device-specific SysEx quirks).
 - Visual or aural confirmation is needed (does it actually make a sound, is the latency usable).
+
+## Manual tests
+
+**The `test_` prefix is deliberately left off the filename**, so `pytest` and `pytest manual/` do not collect them. They run only when named. The equipment is not permanently connected, and a test that runs by accident against a rig that is not there is only noise.
+
+- [`usb_if_din/`](usb_if_din/README.ja.md) (Japanese): **a USB MIDI interface and a MIDI DIN circuit joined into one loop**, so the UART port and the USB host port are checked against each other. The two directions travel over different physical layers. The GPIO numbers come from the environment.
+
+```sh
+uv run --env-file .env pytest manual/usb_if_din/usb_if_din.py
+```
 
 ## Procedures
 

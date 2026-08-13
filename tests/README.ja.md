@@ -20,7 +20,7 @@
 - `examples_compile/`: examples sketch の build-only smoke test。
 - `loopback/`: **1 台**で複数のポートを同時に動かし、`EspMidi` 経由で往復させる自動テスト。
 - `peer/`: 常時接続された ESP32-S3 **2台**でポートの境界を確認する自動テスト。
-- `manual/`: 配線、Host OS の認識、Bluetooth ペアリング、実 MIDI 機器、目視確認など人の操作が必要なテスト。
+- `manual/`: **常時つながっていない機材が要るテスト。**手で実行する。治具を組めば自動で流れる**手動テスト**と、人の判断が本質の**手順書**の 2 種類。
 
 ## 実行
 
@@ -30,7 +30,12 @@ uv run pytest arduino_smoke/
 uv run pytest examples_compile/
 uv run --env-file .env pytest loopback/
 uv run --env-file .env pytest peer/
+
+# 手動テストは治具をつないだうえで、ファイルを明示的に指定する
+uv run --env-file .env pytest manual/usb_if_din/usb_if_din.py
 ```
+
+**手動テストのファイル名には `test_` が付いていません。** そのため `pytest` や `pytest manual/` では collect されず、指定したときだけ動きます。
 
 CI(`.github/workflows/tests.yml`)が回すのは `unit/` `arduino_smoke/` `examples_compile/` の 3 つで、上と同じコマンドを使います。実機を要する `loopback/` `peer/` `manual/` は CI 対象外です。
 
