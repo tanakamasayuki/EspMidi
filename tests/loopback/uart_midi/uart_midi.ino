@@ -97,6 +97,13 @@ void onMessage(void *, const espmidi::Message &message)
 // directly. Connecting an output signal also enables the pin's output driver,
 // while the input path UART2 set up stays as it was — which is exactly the
 // arrangement wanted here.
+//
+// **This connection outlives the sketch.** The GPIO matrix is registers, and a
+// soft reset does not clear them, so after this test the board can still have
+// UART1's transmit signal on SHARED_PIN while the Arduino core believes nothing
+// is assigned (uart_get_TxPin() reports -1). The next sketch then transmits on a
+// pin it never asked for. Power the board down between this test and anything
+// that measures pins.
 void shareThePin()
 {
   esp_rom_gpio_connect_out_signal(SHARED_PIN, U1TXD_OUT_IDX, false, false);

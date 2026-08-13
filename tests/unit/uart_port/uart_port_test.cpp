@@ -206,7 +206,7 @@ void test_begin_is_idempotent()
   assert(f.registry.portCount() == ports);
 }
 
-void test_reopening_releases_the_previous_pins()
+void test_moving_to_new_pins_releases_the_old_ones()
 {
   // On an ESP32 a peripheral reaches a pad through the GPIO matrix, and opening a
   // second pad does not take the first one back. So begin() has to close what it
@@ -221,6 +221,49 @@ void test_reopening_releases_the_previous_pins()
   assert(f.serial.open);
   assert(f.serial.rxPin == 7);
   assert(f.serial.txPin == 6);
+}
+
+void test_reopening_on_the_same_pins_keeps_the_port_open()
+{
+  // Reconfiguring is not moving. Closing and reopening here would throw away
+  // whatever had arrived and put a glitch on the line for the device at the other
+  // end, for no reason.
+  Fixture f;
+  const int8_t rx = f.serial.rxPin;
+  const int8_t tx = f.serial.txPin;
+
+  assert(f.uart.begin("UART MIDI", rx, tx));
+  assert(f.serial.ends == 0);
+
+  // The default arguments mean "leave the pins as they are", so they are not a
+  // move either.
+  assert(f.uart.begin());
+  assert(f.serial.ends == 0);
+  assert(f.serial.open);
+}
+
+void test_moving_pins_closes_a_stream_that_was_being_sent()
+{
+  // The same promise end() makes (docs/ROUTING.ja.md, rule 2): the device at the
+  // other end is holding a partial dump, and the 0xF7 is what lets it discard it.
+  Fixture f;
+  const uint8_t payload[] = {0x7d, 0x01};
+  espmidi::Message dump;
+  dump.type = espmidi::MessageType::Data7;
+  dump.status = 0xf0;
+  dump.chunk = true;
+  dump.chunkStart = true;
+  dump.chunkEnd = false;
+  dump.chunkData = payload;
+  dump.chunkLength = sizeof(payload);
+  assert(f.app.send(dump));
+  f.router.update();
+  assert(!f.serial.tx.empty());
+  assert(f.serial.tx.back() != 0xf7);
+
+  assert(f.uart.begin("UART MIDI", 7, 6));
+
+  assert(f.serial.tx.back() == 0xf7);
 }
 
 void test_received_bytes_reach_the_router()
@@ -392,7 +435,9 @@ int main()
 {
   run(test_begin_supplies_one_endpoint_with_two_ports);
   run(test_begin_is_idempotent);
-  run(test_reopening_releases_the_previous_pins);
+  run(test_moving_to_new_pins_releases_the_old_ones);
+  run(test_reopening_on_the_same_pins_keeps_the_port_open);
+  run(test_moving_pins_closes_a_stream_that_was_being_sent);
   run(test_received_bytes_reach_the_router);
   run(test_nothing_is_received_before_begin);
   run(test_a_read_is_bounded);

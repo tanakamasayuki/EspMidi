@@ -79,16 +79,25 @@ public:
   // `rxPin` and `txPin` are passed through to HardwareSerial::begin(); -1 leaves
   // the peripheral's default pins.
   //
-  // **A port that was already open is closed first.** On an ESP32 a peripheral
+  // **Moving to different pins closes the port first.** On an ESP32 a peripheral
   // reaches a pad through the GPIO matrix, and opening a second pad does not take
-  // the first one back: without this, calling begin() again with different pins
-  // leaves the old ones attached and the board transmits on a pin nobody asked
-  // for. It cost an afternoon on a bench to find, so it is fixed here rather than
-  // written down as a caveat.
+  // the first one back: without this, calling begin() again with new pins leaves
+  // the old ones attached and the board transmits on a pin nobody asked for. It
+  // cost an afternoon on a bench to find, so it is fixed here rather than written
+  // down as a caveat.
+  //
+  // Calling begin() with the same pins stays what it was — a reconfiguration that
+  // keeps the seats and whatever has already arrived. Closing and reopening for
+  // that would drop the receive buffer and put a glitch on the line.
   bool begin(const char *name = "UART MIDI", int8_t rxPin = -1, int8_t txPin = -1)
   {
-    if (started_)
+    // -1 means "leave that pin as it is", so it never counts as a move.
+    const bool moved = (rxPin >= 0 && rxPin != rxPin_) || (txPin >= 0 && txPin != txPin_);
+    if (started_ && moved)
     {
+      // The same order end() uses: a dump that is being sent is terminated so the
+      // device on the other end can discard it (docs/ROUTING.ja.md, rule 2).
+      serializer_.closeStream([this](const uint8_t *bytes, size_t length) { return writeBytes(bytes, length); });
       serial_.end();
       started_ = false;
     }
@@ -116,6 +125,14 @@ public:
 
     serial_.begin(UartMidiBaud, ESPMIDI_UART_CONFIG, rxPin, txPin);
     started_ = true;
+    if (rxPin >= 0)
+    {
+      rxPin_ = rxPin;
+    }
+    if (txPin >= 0)
+    {
+      txPin_ = txPin;
+    }
 
     return router_.setOutputSink(out_, &BasicUartPort::sendFrom, this);
   }
@@ -213,6 +230,10 @@ private:
   Parser parser_;
   Serializer serializer_;
   bool started_ = false;
+  // What the serial object was last opened on, so that begin() can tell a
+  // reconfiguration from a move. -1 is "never set".
+  int8_t rxPin_ = -1;
+  int8_t txPin_ = -1;
 };
 
 #if defined(ARDUINO)
