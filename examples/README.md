@@ -41,3 +41,20 @@ On the default branch `sketch.yaml` refers to `EspMidi` as `dir: ../../`; the sh
 ## Writing your own port
 
 Ports are header-only, so they can live outside this repository. The interface is documented in the comments in `src/EspMidi.h`; UART is the smallest bundled port and the quickest one to read as an example. The background is in [../docs/CORE_DESIGN.ja.md](../docs/CORE_DESIGN.ja.md).
+
+## Workflow and individual READMEs
+
+Start with the [example workflow](../docs/GUIDE_EXAMPLES.md), then choose the relevant sketch.
+
+A useful starting point is [SimpleMidiIn](SimpleMidiIn/README.md). Check its required hardware and choose another entry below if it does not match your setup.
+
+| Example | Learn |
+|---|---|
+| [BleMidiToUart](BleMidiToUart/README.md) | Route BLE MIDI and UART MIDI bidirectionally |
+| [GpioControls](GpioControls/README.md) | Send MIDI control events from GPIO input |
+| [SameCodeAnyPort](SameCodeAnyPort/README.md) | Use common routing logic with different transports |
+| [SimpleMidiIn](SimpleMidiIn/README.md) | Receive and inspect MIDI input messages |
+| [SimpleMidiOut](SimpleMidiOut/README.md) | Send MIDI messages to an output port |
+| [UartMidiMonitor](UartMidiMonitor/README.md) | Observe MIDI arriving on UART |
+| [UsbHostToUart](UsbHostToUart/README.md) | Route USB Host MIDI to a UART port |
+| [UsbMidiDevice](UsbMidiDevice/README.md) | Expose USB Device MIDI ports for routing |

@@ -1,17 +1,5 @@
-// UART MIDI monitor.
-//
-// Watches a MIDI 1.0 stream on a UART and prints what arrives to the console,
-// while passing it through to a second UART unchanged. Put it between a
-// keyboard and a sound module and you can see what the keyboard actually sends
-// without taking the sound module out of the chain.
-//
-// Wiring: the MIDI IN of the monitored link goes to RX_PIN, and TX_PIN drives
-// the MIDI OUT that carries it onward. A real MIDI DIN socket needs an
-// optocoupler on the input and a 220Ω pair on the output; that is outside this
-// library, which deals in bytes.
-//
-// The console is UART0, the USB-serial chip on the board — not the MIDI UARTs.
-
+// en: Observe MIDI arriving on UART
+// ja: UARTへ届くMIDIを観察する
 #include <EspMidiUart.h>
 
 // The MIDI link being watched.
@@ -97,10 +85,14 @@ void setup()
   //    else to start here.
 
   // 2) The ports.
+  // en: Initialize this component after its prerequisites; inspect the returned status where provided.
+  // ja: 前提となる機器を準備してから初期化し、結果を返すAPIでは成否を確認します。
   linkPort.begin("MIDI link", RX_PIN, TX_PIN);
   thru.begin("MIDI thru", THRU_RX_PIN, THRU_TX_PIN);
 
   // 3) The routes.
+  // en: Register source and destination endpoints/groups, considering disconnects and unintended loops.
+  // ja: 切断と意図しないループを考慮して、入力と出力のEndpoint／グループを登録します。
   router.addRoute(linkPort.in(), thru.out());
   router.addRoute(linkPort.in(), monitor.out());
   monitor.onMessage(printMessage);

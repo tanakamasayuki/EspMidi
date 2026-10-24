@@ -1,20 +1,5 @@
-// The same MIDI code over UART, USB or BLE — change one line.
-//
-// This sketch does one thing: it echoes every note it receives back an octave
-// higher, and prints what it saw. What is worth looking at is not the echo but
-// **how little changes when the interface changes**.
-//
-// Change MIDI_PORT below and rebuild. Everything from "the MIDI part" down stays
-// exactly as it is:
-//
-//   MIDI_PORT_UART  a MIDI DIN socket on a UART
-//   MIDI_PORT_USB   a USB MIDI port a PC sees
-//   MIDI_PORT_BLE   a BLE MIDI service a phone connects to
-//
-// **That is the reason to use this library even with a single interface.** The
-// transport-specific part is starting the stack; a route, a filter and a transform
-// are written once and mean the same thing on all three.
-
+// en: Use common routing logic with different transports
+// ja: Transportが異なっても共通のルート処理を使う
 // --- change this one line -------------------------------------------------
 #define MIDI_PORT MIDI_PORT_UART
 // -------------------------------------------------------------------------
@@ -34,6 +19,8 @@ espmidi::UartPort port(router, Serial1, 1);
 
 void startStack() {}                     // a UART port opens its own serial port
 void updateStack() {}
+// en: Initialize this component after its prerequisites; inspect the returned status where provided.
+// ja: 前提となる機器を準備してから初期化し、結果を返すAPIでは成否を確認します。
 void startPort() { port.begin("MIDI DIN", 20, 19); }
 
 #elif MIDI_PORT == MIDI_PORT_USB
@@ -69,6 +56,8 @@ void startStack()
   bleMidi.begin(); // the GATT service is registered before the server starts
   ble.begin();
   ble.advertising().setName("EspMidi Echo");
+  // en: Start work using the configured entry point; the context and objects must remain valid while it runs.
+  // ja: 設定した入口から処理を開始します。実行中はコンテキストとオブジェクトの寿命を保ちます。
   ble.advertising().start();
 }
 void updateStack() { ble.update(); }
@@ -103,6 +92,8 @@ void setup()
   startPort();
 
   // Watch what arrives.
+  // en: Register source and destination endpoints/groups, considering disconnects and unintended loops.
+  // ja: 切断と意図しないループを考慮して、入力と出力のEndpoint／グループを登録します。
   router.addRoute(port.in(), sketch.out());
   sketch.onMessage(onMidi);
 

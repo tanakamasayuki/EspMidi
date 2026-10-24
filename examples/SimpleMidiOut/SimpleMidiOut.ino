@@ -1,13 +1,5 @@
-// The smallest useful EspMidi sketch: send MIDI out of one port.
-//
-// It plays a C major scale over and over, so a sound module connected to the MIDI
-// OUT makes a noise as soon as the board is powered. **One port, one direction** —
-// which is the simplest thing this library does, and the shape everything else is
-// built from.
-//
-// Wiring: TX_PIN through a MIDI OUT circuit (two 220Ω resistors) to the sound
-// module's MIDI IN. Nothing else is needed; the MIDI IN side is not used here.
-
+// en: Send MIDI messages to an output port
+// ja: MIDIメッセージを出力ポートへ送る
 #include <EspMidiUart.h>
 
 static const int8_t TX_PIN = 19;
@@ -26,8 +18,12 @@ espmidi::AppPort sketch(router, "sketch");
 void setup()
 {
   // rxPin is -1: this sketch only sends, so the port has no input pin.
+  // en: Initialize this component after its prerequisites; inspect the returned status where provided.
+  // ja: 前提となる機器を準備してから初期化し、結果を返すAPIでは成否を確認します。
   din.begin("MIDI OUT", -1, TX_PIN);
 
+  // en: Register source and destination endpoints/groups, considering disconnects and unintended loops.
+  // ja: 切断と意図しないループを考慮して、入力と出力のEndpoint／グループを登録します。
   router.addRoute(sketch.in(), din.out());
 }
 

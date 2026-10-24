@@ -1,13 +1,5 @@
-// The smallest useful EspMidi sketch in the other direction: receive MIDI on one
-// port and print it.
-//
-// Connect a keyboard's MIDI OUT and every note appears on the console. **One port,
-// one direction** — and the same three steps as every other sketch here.
-//
-// Wiring: the keyboard's MIDI OUT through a MIDI IN circuit (an optocoupler) to
-// RX_PIN. **Do not connect a MIDI socket straight to a GPIO**: MIDI IN has to be
-// electrically isolated.
-
+// en: Receive and inspect MIDI input messages
+// ja: MIDI入力を受けて内容を確認する
 #include <EspMidiUart.h>
 
 static const int8_t RX_PIN = 20;
@@ -70,8 +62,12 @@ void setup()
   delay(200);
 
   // txPin is -1: this sketch only receives.
+  // en: Initialize this component after its prerequisites; inspect the returned status where provided.
+  // ja: 前提となる機器を準備してから初期化し、結果を返すAPIでは成否を確認します。
   din.begin("MIDI IN", RX_PIN, -1);
 
+  // en: Register source and destination endpoints/groups, considering disconnects and unintended loops.
+  // ja: 切断と意図しないループを考慮して、入力と出力のEndpoint／グループを登録します。
   router.addRoute(din.in(), sketch.out());
   sketch.onMessage(onMidi);
 

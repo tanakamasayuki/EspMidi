@@ -1,25 +1,5 @@
-// A USB MIDI keyboard playing a MIDI DIN sound module, and a PC listening in.
-//
-// Plug a USB MIDI keyboard into the board's USB host port and it plays the sound
-// module on the MIDI DIN out — no PC involved. Plug the board into a PC as well
-// and the same performance also arrives there, so a DAW can record it while the
-// module is being played.
-//
-// This is UC1 in docs/USE_CASES.ja.md, and the point of the library in one sketch:
-// three transports that know nothing about each other, joined by routes.
-//
-//   USB MIDI keyboard ──→ ┐
-//                         ├──→ MIDI DIN OUT (sound module)
-//                         └──→ PC (USB Device port 1)
-//   PC (port 1) ──────────────→ MIDI DIN OUT as well
-//
-// **Nothing names the keyboard.** Its seats appear when it is plugged in, so the
-// routes are written from InGroup::all() and whatever arrives takes part. Unplug
-// it mid-phrase and the routes stay; plug it back in and it carries on.
-//
-// Hardware: an ESP32-P4, or an S3 with a USB host port wired up. The console is
-// the board's external USB-serial chip.
-
+// en: Route USB Host MIDI to a UART port
+// ja: USB HostのMIDIをUARTへルートする
 #include <EspMidiEspUsbDevice.h>
 #include <EspMidiEspUsbHost.h>
 #include <EspMidiUart.h>
@@ -59,6 +39,8 @@ void setup()
   delay(200);
 
   // 1) The stacks. EspMidi owns none of them.
+  // en: Initialize this component after its prerequisites; inspect the returned status where provided.
+  // ja: 前提となる機器を準備してから初期化し、結果を返すAPIでは成否を確認します。
   usbHost.begin();
   EspUsbDeviceConfig config;
   config.manufacturer = "EspMidi";
@@ -77,6 +59,8 @@ void setup()
   //    A route never sends a message back to the endpoint it came from, so
   //    "everything to the module and to the PC" cannot make the PC echo to itself
   //    or the DIN input loop back to its own output.
+  // en: Register source and destination endpoints/groups, considering disconnects and unintended loops.
+  // ja: 切断と意図しないループを考慮して、入力と出力のEndpoint／グループを登録します。
   router.addRoute(espmidi::InGroup::all(), din.out());
   router.addRoute(espmidi::InGroup::all(), pc.out(0));
 

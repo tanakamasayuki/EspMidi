@@ -6,6 +6,8 @@ ESP32 の MIDI インターフェースの間にすわり、統合・複製・�
 
 > **未リリースです。** 実装計画は完了し、**同梱ポートはすべて ESP32-S3 実機で動作を確認しています**。API はまだ変わりえます。実装の現在地は [docs/DEVELOPMENT_PLAN.ja.md](docs/DEVELOPMENT_PLAN.ja.md)、各ポートの状況は [docs/PORTS.ja.md](docs/PORTS.ja.md) を参照してください。
 
+初めて使う場合は[サンプル入門ガイド](docs/GUIDE_EXAMPLES.ja.md)と[各例の日英README](examples/README.ja.md)を参照してください。準備、APIの流れ、確認方法、組み込み時の注意を説明しています。
+
 ## 15 行で USB MIDI キーボード → MIDI DIN 音源
 
 ```cpp

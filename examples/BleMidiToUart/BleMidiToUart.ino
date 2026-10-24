@@ -1,25 +1,5 @@
-// A wireless BLE MIDI keyboard playing a MIDI DIN sound module.
-//
-// This is UC5 in docs/USE_CASES.ja.md: the board makes an old sound module
-// playable from a modern wireless keyboard, with no PC involved. It also works the
-// other way — anything arriving on the MIDI DIN input is sent to the keyboard, so a
-// controller with lights or a display can be driven back.
-//
-//   BLE MIDI keyboard ──→ MIDI DIN OUT (sound module)
-//   MIDI DIN IN ────────→ BLE MIDI keyboard
-//
-// The sketch scans and connects, because that is BLE and EspMidi does not own it.
-// Finding the MIDI service on the connection is the port's job, so discover() is
-// never called here.
-//
-// **Nothing names the keyboard.** Its seat appears when the connection becomes
-// usable, so the routes are written from InGroup::all() and whatever arrives takes
-// part. The keyboard also gets its seat back when it reconnects: a BLE address is
-// the identity, so the routes survive it going out of range.
-//
-// Wiring: RX_PIN to the MIDI IN, TX_PIN to the MIDI OUT. A real MIDI DIN socket
-// needs an optocoupler on the input and a 220Ω pair on the output.
-
+// en: Route BLE MIDI and UART MIDI bidirectionally
+// ja: BLE MIDIとUART MIDIを双方向にルートする
 #include <EspMidiEspBle.h>
 #include <EspMidiUart.h>
 
@@ -55,6 +35,8 @@ void setup()
   delay(200);
 
   // 1) The stacks, and the scanning that finds a keyboard.
+  // en: Initialize this component after its prerequisites; inspect the returned status where provided.
+  // ja: 前提となる機器を準備してから初期化し、結果を返すAPIでは成否を確認します。
   ble.begin();
   bleMidi.begin();
   ble.scanner().onResult([](const EspBleScanResult &result) {
@@ -71,6 +53,8 @@ void setup()
     connectRequested = false;
     EspBleScanConfig scan;
     scan.active = true;
+    // en: Start work using the configured entry point; the context and objects must remain valid while it runs.
+    // ja: 設定した入口から処理を開始します。実行中はコンテキストとオブジェクトの寿命を保ちます。
     ble.scanner().start(scan);
   });
 
@@ -86,6 +70,8 @@ void setup()
   //
   //    A route never sends a message back to the endpoint it came from, so the
   //    second one reaches the keyboard and not the module's own output.
+  // en: Register source and destination endpoints/groups, considering disconnects and unintended loops.
+  // ja: 切断と意図しないループを考慮して、入力と出力のEndpoint／グループを登録します。
   router.addRoute(espmidi::InGroup::all(), din.out());
   router.addRoute(din.in(), espmidi::OutGroup::all());
   registry.addListener(onPortEvent);

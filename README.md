@@ -6,6 +6,8 @@ An Arduino library that sits between the MIDI interfaces an ESP32 can reach and 
 
 > **Not released yet.** The implementation plan is complete and **every bundled port has been verified on real ESP32-S3 hardware**. The API can still change. See [docs/DEVELOPMENT_PLAN.ja.md](docs/DEVELOPMENT_PLAN.ja.md) for the current position and [docs/PORTS.ja.md](docs/PORTS.ja.md) for per-port status. The design documents are Japanese only.
 
+Start with the [example workflow](docs/GUIDE_EXAMPLES.md) and [individual example READMEs](examples/README.md) for setup, API sequence, verification and adaptation notes.
+
 ## A USB MIDI keyboard into a MIDI DIN sound module, in fifteen lines
 
 ```cpp

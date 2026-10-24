@@ -1,21 +1,5 @@
-// A MIDI controller: two knobs, two buttons and an encoder, over USB and MIDI DIN.
-//
-// This is UC10 in docs/USE_CASES.ja.md. The board is a MIDI device rather than a
-// MIDI router here, and everything it produces goes out of both a USB MIDI port
-// and a MIDI DIN socket at once.
-//
-// **The helpers never touch a pin.** The sketch reads whatever it has and hands
-// the number over, which is why the same helper works for an ADC, a port
-// expander, a touch sensor or a value off a network. It is also why the reading
-// and the moment are always parameters — see src/EspMidiControl.h.
-//
-//   knobs, buttons, encoder ──→ [application port] ──→ USB MIDI
-//                                                  └─→ MIDI DIN OUT
-//   USB MIDI ──→ an LED (note 60) and a dimmer (CC 20)
-//
-// The LED half is the mirror image: a DAW lights the board's LED by sending a
-// note, using the same Filter the routing uses everywhere else.
-
+// en: Send MIDI control events from GPIO input
+// ja: GPIO入力からMIDIのControlイベントを送る
 #include <EspMidiEspUsbDevice.h>
 #include <EspMidiUart.h>
 
@@ -101,6 +85,8 @@ void setup()
   EspUsbDeviceConfig config;
   config.manufacturer = "EspMidi";
   config.product = "EspMidi Controls";
+  // en: Initialize this component after its prerequisites; inspect the returned status where provided.
+  // ja: 前提となる機器を準備してから初期化し、結果を返すAPIでは成否を確認します。
   usb.begin(config);
 
   // 2) The ports.
@@ -119,6 +105,8 @@ void setup()
   encoder.config().controller = 16;
 
   // 4) The routes. What the board produces goes to both destinations at once.
+  // en: Register source and destination endpoints/groups, considering disconnects and unintended loops.
+  // ja: 切断と意図しないループを考慮して、入力と出力のEndpoint／グループを登録します。
   router.addRoute(controls.in(), pc.out(0));
   router.addRoute(controls.in(), din.out());
 

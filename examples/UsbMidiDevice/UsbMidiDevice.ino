@@ -1,21 +1,5 @@
-// USB MIDI interface with two ports.
-//
-// Plug the board into a PC and two MIDI ports appear. Port 1 carries whatever
-// arrives on the UART MIDI IN, and anything the PC sends to port 1 goes out of the
-// UART MIDI OUT — a USB MIDI interface for one MIDI DIN pair. Port 2 is the
-// board's own: the sketch plays notes on it and watches what the PC sends back.
-//
-// That second port is what a USB MIDI interface for sale cannot do and this one
-// can: the board is a MIDI device and a MIDI router at the same time, and both
-// halves are just ports to the routing.
-//
-// Wiring: RX_PIN to the MIDI IN, TX_PIN to the MIDI OUT. A real MIDI DIN socket
-// needs an optocoupler on the input and a 220Ω pair on the output; that is outside
-// this library, which deals in bytes.
-//
-// The console is the board's external USB-serial chip, separate from the native
-// USB the PC sees.
-
+// en: Expose USB Device MIDI ports for routing
+// ja: USB DeviceのMIDI ポートをルートへ接続する
 #include <EspMidiEspUsbDevice.h>
 #include <EspMidiUart.h>
 
@@ -67,6 +51,8 @@ void setup()
   EspUsbDeviceConfig config;
   config.manufacturer = "EspMidi";
   config.product = "EspMidi Interface";
+  // en: Initialize this component after its prerequisites; inspect the returned status where provided.
+  // ja: 前提となる機器を準備してから初期化し、結果を返すAPIでは成否を確認します。
   usb.begin(config);
 
   // 2) The ports. The USB port's cable counts are final once the stack is up, so
@@ -75,6 +61,8 @@ void setup()
   uart.begin("MIDI DIN", RX_PIN, TX_PIN);
 
   // 3) The routes. USB port 1 is the MIDI DIN pair, in both directions.
+  // en: Register source and destination endpoints/groups, considering disconnects and unintended loops.
+  // ja: 切断と意図しないループを考慮して、入力と出力のEndpoint／グループを登録します。
   router.addRoute(uart.in(), usbPort.out(0));
   router.addRoute(usbPort.in(0), uart.out());
 

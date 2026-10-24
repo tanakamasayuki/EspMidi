@@ -41,3 +41,20 @@ examples/<Name>/
 ## 自作のポートをつなぎたいとき
 
 ポートは header-only なので、`EspMidi` リポジトリの外にも書けます。インターフェースの正本は `src/EspMidi.h` のコメントで、同梱ポートのうち UART が最も小さいので実装例としては UART を読むのが早いです。設計の背景は [../docs/CORE_DESIGN.ja.md](../docs/CORE_DESIGN.ja.md) にあります。
+
+## 実行ガイドと個別README
+
+最初に[サンプル入門ガイド](../docs/GUIDE_EXAMPLES.ja.md)を読み、目的に合う例へ進んでください。
+
+最初の候補は[SimpleMidiIn](SimpleMidiIn/README.ja.md)です。必要な機器を確認し、対象が異なる場合は下の一覧から選び直してください。
+
+| 例 | 学ぶこと |
+|---|---|
+| [BleMidiToUart](BleMidiToUart/README.ja.md) | BLE MIDIとUART MIDIを双方向にRouteする |
+| [GpioControls](GpioControls/README.ja.md) | GPIO入力からMIDIのControlイベントを送る |
+| [SameCodeAnyPort](SameCodeAnyPort/README.ja.md) | Transportが異なっても共通のRoute処理を使う |
+| [SimpleMidiIn](SimpleMidiIn/README.ja.md) | MIDI入力を受けて内容を確認する |
+| [SimpleMidiOut](SimpleMidiOut/README.ja.md) | MIDIメッセージを出力Portへ送る |
+| [UartMidiMonitor](UartMidiMonitor/README.ja.md) | UARTへ届くMIDIを観察する |
+| [UsbHostToUart](UsbHostToUart/README.ja.md) | USB HostのMIDIをUARTへRouteする |
+| [UsbMidiDevice](UsbMidiDevice/README.ja.md) | USB DeviceのMIDI PortをRouteへ接続する |
