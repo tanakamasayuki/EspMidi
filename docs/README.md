@@ -38,6 +38,7 @@ Which document to read, and in what order. The design documents are Japanese onl
 
 ## For users
 
+- [GUIDE_EXAMPLES.md](GUIDE_EXAMPLES.md) — how to choose an example, prepare and verify it, and what to check when integrating it.
 - [GUIDE.md](GUIDE.md) — the usage guide: from sending on a single port up to routing between several, with a troubleshooting section and how to read the diagnostic counters.
 - [MIDI_BASICS.md](MIDI_BASICS.md) — the caveats of MIDI itself (velocity 0, running status, 0-based channels, bandwidth) and per-interface notes (DIN isolation, cables, enumeration, BLE latency and limits).
 - [HARDWARE.md](HARDWARE.md) — the MIDI DIN circuit: **the 3.3 V resistor values**, isolation, cable and EMI provisions, summarised from the specification (CA-033) with links to the originals.

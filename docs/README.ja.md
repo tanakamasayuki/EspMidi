@@ -40,6 +40,7 @@
 
 **使う人向け**
 
+- [GUIDE_EXAMPLES.ja.md](GUIDE_EXAMPLES.ja.md) — サンプルの選び方、準備から動作確認までの手順、組み込むときの注意点。
 - [GUIDE.ja.md](GUIDE.ja.md) — 使い方ガイド。1 ポートの送信から複数ポートのルーティングまで順に進みます。「よくあるつまずき」と診断カウンタの読み方もここ。
 - [MIDI_BASICS.ja.md](MIDI_BASICS.ja.md) — MIDI 自体の注意事項(velocity 0、running status、チャンネルの 0 始まり、帯域)とインターフェース別の注意点(DIN の絶縁、cable、列挙、BLE のレイテンシと上限)。
 - [HARDWARE.ja.md](HARDWARE.ja.md) — MIDI DIN の回路。**3.3V の抵抗値**、絶縁、ケーブル、EMI 対策。規格(CA-033)からの要約と原典へのリンク。
